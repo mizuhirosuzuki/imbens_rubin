@@ -1,0 +1,27 @@
+---
+title: "Saving rate and economic growth"
+author: ""
+date: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r ScatterLabels, warning = FALSE, results = "hide"}
+# Install and load packages ---------------
+packages <- c(
+  "tidyverse",
+  "ggrepel",
+  "WDI",
+  "forcats",
+  "grid",
+  "gridExtra",
+  "countrycode",
+  "scales"
+)
+
+# Change to install = TRUE to install the required packages
+pacman::p_load(packages, character.only = TRUE)
+
+```
