@@ -18,10 +18,22 @@ packages <- c(
   "grid",
   "gridExtra",
   "countrycode",
-  "scales"
+  "scales",
+  "haven"
 )
 
 # Change to install = TRUE to install the required packages
 pacman::p_load(packages, character.only = TRUE)
 
 ```
+
+
+```{r}
+
+treatment_school <- read_dta("../data/Duflo_Hanna_Ryan/data/Incentives_FINAL/Raw-Data/Tests/treatschool.dta") %>% 
+  mutate(treatment = 1)
+
+
+
+```
+
