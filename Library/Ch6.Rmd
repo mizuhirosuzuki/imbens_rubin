@@ -1,0 +1,166 @@
+---
+title: "Chapter 6"
+author: ""
+date: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r ScatterLabels, warning = FALSE, results = "hide"}
+# Install and load packages ---------------
+packages <- c(
+  "tidyverse",
+  "ggrepel",
+  "WDI",
+  "forcats",
+  "grid",
+  "gridExtra",
+  "countrycode",
+  "scales",
+  "haven",
+  "kableExtra",
+  "magrittr"
+)
+
+# Change to install = TRUE to install the required packages
+pacman::p_load(packages, character.only = TRUE)
+
+```
+
+# Data preparation
+
+## Load datasets
+
+```{r}
+
+# data of treatment assignment by school
+treatment_school <- read_dta("../data/Duflo_Hanna_Ryan/data/Incentives_FINAL/Raw-Data/Tests/treatschool.dta") %>% 
+  mutate(treatment = 1)
+# result of random check if a school is open
+random_check <- read_dta("../data/Duflo_Hanna_Ryan/dataverse_files/RandomCheck.dta")
+# pre-treatment test results
+pre_test <- read_dta("../data/Duflo_Hanna_Ryan/dataverse_files/Pretest.dta")
+# post-treatment test results
+post_test <- read_dta("../data/Duflo_Hanna_Ryan/dataverse_files/Posttest.dta")
+
+```
+
+## Data processing
+
+```{r}
+
+# Make school-level post treatment average test results
+# - indicator for taking a written test
+# - score for written test (NA for those who did not take tests)
+post_test_school <- post_test %>% 
+  group_by(schid) %>% 
+  summarise_at(vars(post_writ, post_total_w), mean, na.rm = TRUE)
+# For later use, get the mean of the average test results across schools
+post_total_w_mean <- mean(post_test_school$post_total_w)
+
+# School-level post treatment average test results, where
+# scores of students who didn't take tests are replaced to 0
+post_test_school_all <- post_test %>% 
+  mutate(post_total_w = replace_na(post_total_w, 0)) %>% 
+  group_by(schid) %>% 
+  summarise(post_total_w_all = mean(post_total_w,na.rm = TRUE))
+
+# Make school-level pre treatment average test results 
+pre_test_school <- pre_test %>% 
+  group_by(schid) %>% 
+  summarise_at(vars(pre_writ), mean, na.rm = TRUE)
+
+# School-level share of opens
+# (In Imbens-Rubin textbook, it appears that all records, including pre-treatment, are counted for this variable.
+# For information of post-treatment opens, use filter by month and year)
+school_open <- random_check %>% 
+  mutate(open = ifelse(a1_1 == 1, 1, 0)) %>% 
+  # mutate(
+  #   post_med = ifelse(year >= 2005 | (month >= 4 & year >= 2004), 1, 0),
+  #   post_end = ifelse(year >= 2005 | (month >= 11 & year >= 2004), 1, 0),
+  # ) %>% 
+  # filter(post_med == 1) %>% 
+  group_by(schid) %>% 
+  summarise_at(vars(open), mean, na.rm = TRUE)
+
+df <- post_test_school %>% 
+  # merge treatment status information
+  left_join(treatment_school, by = c("schid" = "schid")) %>% 
+  mutate(treatment = ifelse(is.na(treatment), 0, 1)) %>% 
+  # merge pre-treatment test results data
+  left_join(pre_test_school, by = c("schid" = "schid")) %>% 
+  # merge post-treatment test results data with NA replaced to 0
+  left_join(post_test_school_all, by = c("schid" = "schid")) %>% 
+  # merge school open information
+  left_join(school_open, by = c("schid" = "schid")) %>% 
+  # It appears that, the post-treatment test scores are divided by the average (ignoring students who didn't take exam)
+  # Not sure exactly why
+  mutate(
+    post_total_w = post_total_w / post_total_w_mean,
+    post_total_w_all = post_total_w_all / post_total_w_mean,
+  )
+
+  
+```
+
+
+```{r}
+# Summary statistics for control and treatment group variables
+control_treat_sum <- df %>% 
+  group_by(treatment) %>% 
+  summarise_at(
+    vars(pre_writ, open, post_writ, post_total_w, post_total_w_all),
+    list(mean, sd)
+  ) %>% 
+  pivot_longer(cols = -treatment, names_to = c(".value", "fn"), names_patter = "(.*)(_.*$)") %>% 
+  mutate(
+    across(-treatment, ~ formatC(., digits = 2, format = "f")),
+    across(-treatment, ~ ifelse(fn == "_fn2", paste0("(", ., ")"), .)),
+    ) %>% 
+  select(-treatment, -fn) %>% 
+  as.matrix() %>% 
+  t()
+  
+# Summary statistics for all schools
+all_school_sum <- df %>% 
+  summarise_at(
+    vars(pre_writ, open, post_writ, post_total_w, post_total_w_all),
+    list(min, max)
+  ) %>% 
+  pivot_longer(cols = everything(), names_to = c(".value", "fn"), names_patter = "(.*)(_.*$)") %>% 
+  mutate(across(-fn, ~ formatC(., digits = 2, format = "f"))) %>% 
+  select(-fn) %>% 
+  as.matrix() %>% 
+  t()
+
+```
+
+```{r}
+
+cbind(
+  c("pctprewritten", "open", "pctpostwritten", "written", "written_all"),
+  control_treat_sum, all_school_sum
+  ) %>% 
+  set_rownames(NULL) %>% 
+  kable("html", booktabs = TRUE) %>% 
+  add_header_above(
+    c(" ", rep(c("Average", "(S.D.)"), 2), "Min", "Max")
+  ) %>% 
+  add_header_above(
+    c(
+      "Variable",
+      "Control ($N_c$ = 54)" = 2,
+      "Treatment ($N_c$ = 53)" = 2,
+      " ", " "
+      )
+  ) %>% 
+  pack_rows(index = c(
+    "Pre-treatment" = 1,
+    "Post-treatment" = 4
+  )) %>% 
+  kable_styling(position = "center")
+
+```
+  
