@@ -1,7 +1,7 @@
 name: "my-website"
 output_dir: "../docs"
 navbar:
-  title: "Some figures"
+  title: "Imbens-Rubin textbook replication codes"
   left:
     - text: "Home"
       href: index.html

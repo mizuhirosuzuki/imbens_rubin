@@ -1,5 +1,5 @@
 ---
-title: "Some figures"
+title: "Imbens-Rubin textbook replication codes"
 output: 
   html_document:
     theme: cerulean
@@ -10,3 +10,5 @@ output:
 ---
 
 
+* [Chapter 5 (simulations)](Ch5_sim.html)
+* [Chapter 6](Ch6.html)
