@@ -82,6 +82,7 @@
 !/**/Output/**/*.xml
 !/**/Output/**/*.eps
 !/**/Output/**/*.svg
+!docs/*_files/**/*.png
 
 
 #######################
