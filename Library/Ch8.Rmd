@@ -1,0 +1,119 @@
+---
+title: "Chapter 8"
+author: ""
+date: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r ScatterLabels, warning = FALSE, results = "hide"}
+# Install and load packages ---------------
+packages <- c(
+  "tidyverse",
+  "ggrepel",
+  "WDI",
+  "forcats",
+  "grid",
+  "gridExtra",
+  "countrycode",
+  "lmtest",
+  "sandwich",
+  "scales",
+  "haven",
+  "kableExtra",
+  "magrittr"
+)
+
+# Change to install = TRUE to install the required packages
+pacman::p_load(packages, character.only = TRUE)
+
+```
+
+```{r}
+
+
+df <- read_dta("http://www.nber.org/~rdehejia/data/nsw_dw.dta") %>% 
+  mutate(
+    earn74 = re74 / 1000,
+    earn75 = re75 / 1000,
+    earn78 = re78 / 1000,
+    earn74_0 = (re74 == 0),
+    earn75_0 = (re75 == 0),
+    earn78_0 = (re78 == 0),
+    )
+
+cbind(
+  c(
+    "age", "education", "married", "nodegree", "black", 
+    "earn'74", "earn'74 = 0", "earn'75", "earn'75 = 0", "earn'78", "earn'78 = 0"
+    ),
+  df %>% 
+    summarise_at(
+      vars(age, education, married, nodegree, black, earn74, earn74_0, earn75, earn75_0, earn78, earn78_0),
+      list(mean, sd)
+      ) %>% 
+    pivot_longer(cols = everything(), names_to = c(".value", "fn"), names_patter = "(.*)(_.*$)") %>% 
+    mutate(
+      across(-fn, ~ formatC(., digits = 2, format = "f")),
+      across(-fn, ~ ifelse(fn == "_fn2", paste0("(", ., ")"), .)),
+      ) %>% 
+    select(-fn) %>% 
+    t(),
+  df %>% 
+    filter(treat == 0) %>% 
+    summarise_at(
+      vars(age, education, married, nodegree, black, earn74, earn74_0, earn75, earn75_0, earn78, earn78_0),
+      mean
+      ) %>% 
+    mutate(
+      across(everything(), ~ formatC(., digits = 2, format = "f")),
+      ) %>% 
+    t(),
+  df %>% 
+    filter(treat == 1) %>% 
+    summarise_at(
+      vars(age, education, married, nodegree, black, earn74, earn74_0, earn75, earn75_0, earn78, earn78_0),
+      mean
+      ) %>% 
+    mutate(
+      across(everything(), ~ formatC(., digits = 2, format = "f")),
+      ) %>% 
+    t()
+  ) %>%
+  set_rownames(NULL) %>% 
+  kable("html", booktabs = TRUE, align = c("l", rep("c", 4))) %>% 
+  add_header_above(
+    c(" ", " ", " ", "($N_c$ = 260)", "($N_t$ = 185)")
+  ) %>% 
+  add_header_above(
+    c("Covariate", "Mean", "(S.D.)", "Average Controls", "Average Treated")
+  ) %>% 
+  kable_styling(position = "center")
+
+```
+
+
+```{r}
+df %>% 
+  filter(treat == 0) %>% 
+  ggplot(aes(x = earn78)) +
+  stat_bin(aes(y = ..count../sum(..count..)), binwidth = 1, boundary = 0) +
+  xlim(c(0, 80)) +
+  ylim(c(0, 0.5)) +
+  theme_minimal()
+```
+
+```{r}
+df %>% 
+  filter(treat == 1) %>% 
+  ggplot(aes(x = earn78)) +
+  stat_bin(aes(y = ..count../sum(..count..)), binwidth = 1, boundary = 0) +
+  xlim(c(0, 80)) +
+  ylim(c(0, 0.5)) +
+  theme_minimal()
+```
+
+df %>% head(6)
+

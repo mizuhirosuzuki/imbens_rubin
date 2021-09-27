@@ -1,0 +1,70 @@
+---
+title: "Chapter 6"
+author: ""
+date: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r ScatterLabels, warning = FALSE, results = "hide"}
+# Install and load packages ---------------
+packages <- c(
+  "tidyverse",
+  "ggrepel",
+  "WDI",
+  "forcats",
+  "grid",
+  "gridExtra",
+  "countrycode",
+  "lmtest",
+  "sandwich",
+  "scales",
+  "haven",
+  "kableExtra",
+  "magrittr"
+)
+
+# Change to install = TRUE to install the required packages
+pacman::p_load(packages, character.only = TRUE)
+
+```
+
+# Data preparation
+
+## Load datasets
+
+```{r}
+
+# data of treatment assignment by school
+df <- read_dta("../data/Bloom2020/table2/table2.dta") 
+
+df_clean <- df %>% 
+  filter(year == 2011, experimental == 1) %>% 
+  select(fcode, treatment2011, management) %>% 
+  group_by(fcode) %>% 
+  summarise_at(vars(treatment2011, management), mean, na.rm = TRUE)
+
+diff_1 <- (
+  mean(df_clean %>% filter(treatment2011 == 1) %>% .$management) -
+    mean(df_clean %>% filter(treatment2011 == 0) %>% .$management)
+  )
+
+treatment_perm <- combn(nrow(df_clean), nrow(df_clean %>% filter(treatment2011 == 1)))
+
+perm_res <- map_dbl(
+  seq(ncol(treatment_perm)),
+  ~ mean((df_clean %>% pull(management))[treatment_perm[, .]]) - mean((df_clean %>% pull(management))[-treatment_perm[, .]])
+)
+
+ggplot() +
+  geom_histogram(aes(x = perm_res), binwidth = 0.025) +
+  theme_minimal() +
+  geom_vline(xintercept = c(quantile(perm_res, .90), quantile(perm_res, .10)), linetype = 5) +
+  geom_vline(xintercept = c(quantile(perm_res, .95), quantile(perm_res, .05)), linetype = 4) +
+  geom_vline(xintercept = c(quantile(perm_res, .99), quantile(perm_res, .01)), linetype = 3) +
+  geom_vline(xintercept = diff_1, color = "red")
+  
+
+```

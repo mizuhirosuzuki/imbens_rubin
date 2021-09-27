@@ -18,6 +18,8 @@ packages <- c(
   "grid",
   "gridExtra",
   "countrycode",
+  "lmtest",
+  "sandwich",
   "scales",
   "haven",
   "kableExtra",
@@ -137,6 +139,8 @@ all_school_sum <- df %>%
 
 ```
 
+## Summary statistics (Replication of Table 6.1)
+
 ```{r}
 
 cbind(
@@ -164,3 +168,230 @@ cbind(
 
 ```
   
+## Estimates of components of variance of estimator for the effect on `open` variable (Replication of Table 6.2)
+
+```{r}
+
+df_control <- df %>% filter(treatment == 0)
+df_treatment <- df %>% filter(treatment == 1)
+
+# mean of outcome for control
+Yobs_c <- mean(df_control$open)
+# mean of outcome for treatment
+Yobs_t <- mean(df_treatment$open)
+# estimate for average treatment effect
+tau_hat <- Yobs_t - Yobs_c
+
+# estimated variance for control (obtain as SD)
+s_c <- sqrt(sum((df_control$open - Yobs_c)^2) / (nrow(df_control) - 1))
+# estimated variance for treatment (obtain as SD)
+s_t <- sqrt(sum((df_treatment$open - Yobs_t)^2) / (nrow(df_treatment) - 1))
+# estimated variance for all (obtain as SD)
+s <- sqrt(
+  (s_c^2 * (nrow(df_control) - 1) + s_t^2 * (nrow(df_treatment) - 1)) / 
+    (nrow(df) - 2) 
+  )
+
+# Sampling variance estimates, ignoring heterogeneous treatment effects (obtain as SD)
+sd_neyman <- sqrt(s_c^2 / nrow(df_control) + s_t^2 / nrow(df_control))
+# Sampling variance estimates under constant treatment effects (obtain as SD)
+sd_const <- sqrt(s^2 * (1 / nrow(df_control) + 1 / nrow(df_treatment)))
+# Sampling variance estimates when potential outcomes are perfectly correlated (obtain as SD)
+sd_rho1 <- sqrt(
+  s_c^2 * (nrow(df_treatment) / (nrow(df) * nrow(df_control))) +
+    s_t^2 * (nrow(df_control) / (nrow(df) * nrow(df_treatment))) +
+    s_c * s_t * 2 / nrow(df)
+  )
+
+bind_cols(
+  name = c(
+    "$\\bar{Y}_c^{obs}$", "$\\bar{Y}_t^{obs}$", "$\\hat{\\tau}$",
+    "$s_c^2$", "$s_t^2$", "$s^2$",
+    "$\\hat{V}^{\\text{neyman}} = s^2 / N_c + s^2 / N_t$",
+    "$\\hat{V}^{\\text{const}} = s^2 \\cdot \\left( 1 / N_c +  1 / N_t \\right)$",
+    "$\\hat{V}^{\\rho_{tc} = 1} = s_c^2 \\cdot \\left( N_t / (N \\cdot N_c ) \\right) + s_t^2 \\cdot \\left( N_c / (N \\cdot N_t) \\right) + s_c \\cdot s_t \\cdot \\left( 2 / N \\right)$"
+  ),
+  value = c(
+    Yobs_c, Yobs_t, tau_hat,
+    s_c, s_t, s,
+    sd_neyman, sd_const, sd_rho1
+  )
+) %>% 
+  mutate(value = formatC(value, digits = 2, format = "f")) %>% 
+  mutate(
+    value = ifelse(row_number() >= 4, paste0("$", value, "^2$"), paste0("$", value, "$"))
+  ) %>% 
+  set_colnames(NULL) %>% 
+  kable("html", booktabs = TRUE) %>% 
+  pack_rows(index = c(
+    "Estimated means" = 3,
+    "Estimated variance compnents" = 3,
+    "Sampling variance estimates" = 3
+  )) %>% 
+  kable_styling(position = "center")
+
+```
+
+
+## Estimates of, and confidence intervals for average treatment effects (Replication of Table 6.3)
+
+```{r}
+
+make_table_6_3 <- function(df, outcome) {
+  
+  df_control <- df %>% filter(treatment == 0)
+  df_treatment <- df %>% filter(treatment == 1)
+  
+  # mean of outcome for control
+  Yobs_c <- mean(df_control %>% pull(outcome))
+  # mean of outcome for treatment
+  Yobs_t <- mean(df_treatment %>% pull(outcome))
+  # estimate for average treatment effect
+  tau_hat <- Yobs_t - Yobs_c
+  
+  # estimated variance for control (obtain as SD)
+  s_c <- sqrt(sum((df_control %>% pull(outcome) - Yobs_c)^2) / (nrow(df_control) - 1))
+  # estimated variance for treatment (obtain as SD)
+  s_t <- sqrt(sum((df_treatment %>% pull(outcome) - Yobs_t)^2) / (nrow(df_treatment) - 1))
+  # Sampling variance estimates, ignoring heterogeneous treatment effects (obtain as SD)
+  sd_neyman <- sqrt(s_c^2 / nrow(df_control) + s_t^2 / nrow(df_control))
+  
+  ci <- paste0(
+    "(",
+    (tau_hat - 1.96 * sd_neyman) %>% formatC(digits = 2, format = "f"), ", ",
+    (tau_hat + 1.96 * sd_neyman) %>% formatC(digits = 2, format = "f"),
+    ")"
+  )
+    
+  return(c(
+    tau_hat %>% formatC(digits = 2, format = "f"), 
+    paste0("(", sd_neyman %>% formatC(digits = 2, format = "f"), ")"),
+    ci
+    ))
+  
+}
+
+cbind(
+  c("open", "pctpostwritten", "written", "written_all"),
+  map(
+    c("open", "post_writ", "post_total_w", "post_total_w_all"),
+    ~ make_table_6_3(df, .)
+  ) %>% 
+    bind_cols() %>% 
+    t()
+  ) %>% 
+  set_rownames(NULL) %>% 
+  kable("html", booktabs = TRUE, align = c("l", "c", "c", "c")) %>% 
+  add_header_above(
+    c("Variable", "$\\widehat{ATE}$", "$(\\widehat{\\text{s.e.}})$", "95\\% C.I.")
+  ) %>% 
+  kable_styling(position = "center")
+
+
+
+```
+
+## estimates of, and confidence intervals for average treatment effects by covariate (Replication of Table 6.4)
+
+```{r}
+
+make_table_6_4 <- function(df, outcome, covar0) {
+  
+  if (covar0 == TRUE) {
+    df_control <- df %>% filter(treatment == 0) %>% filter(pre_writ == 0)
+    df_treatment <- df %>% filter(treatment == 1) %>% filter(pre_writ == 0)
+  } else {
+    df_control <- df %>% filter(treatment == 0) %>% filter(pre_writ > 0)
+    df_treatment <- df %>% filter(treatment == 1) %>% filter(pre_writ > 0)
+  }
+  
+  # Average treatment effects for samples with pre-writ == 0
+  # mean of outcome for control
+  Yobs_c <- mean(df_control %>% pull(outcome))
+  # mean of outcome for treatment
+  Yobs_t <- mean(df_treatment %>% pull(outcome))
+  # estimate for average treatment effect
+  tau_hat <- Yobs_t - Yobs_c
+  
+  # estimated variance for control (obtain as SD)
+  s_c <- sqrt(sum((df_control %>% pull(outcome) - Yobs_c)^2) / (nrow(df_control) - 1))
+  # estimated variance for treatment (obtain as SD)
+  s_t <- sqrt(sum((df_treatment %>% pull(outcome) - Yobs_t)^2) / (nrow(df_treatment) - 1))
+  # Sampling variance estimates, ignoring heterogeneous treatment effects (obtain as SD)
+  sd_neyman <- sqrt(s_c^2 / nrow(df_control) + s_t^2 / nrow(df_control))
+  
+  ci <- paste0(
+    "(",
+    (tau_hat - 1.96 * sd_neyman) %>% formatC(digits = 2, format = "f"), ", ",
+    (tau_hat + 1.96 * sd_neyman) %>% formatC(digits = 2, format = "f"),
+    ")"
+  )
+    
+  return(c(
+    tau_hat %>% formatC(digits = 2, format = "f"), 
+    paste0("(", sd_neyman %>% formatC(digits = 2, format = "f"), ")"),
+    ci
+    ))
+  
+}
+
+make_table_6_4_diff <- function(df, outcome) {
+  
+  reg_res <- lm(as.formula(paste(outcome, "treatment*(pre_writ == 0)", sep = " ~ ")), df) %>% 
+    coeftest(., vcov = vcovHC(., type = "HC1"))
+  est <- reg_res["treatment:pre_writ == 0TRUE", "Estimate"]
+  se <- reg_res["treatment:pre_writ == 0TRUE", "Std. Error"]
+  
+  ci <- paste0(
+    "(",
+    (est - 1.96 * se) %>% formatC(digits = 2, format = "f"), ", ",
+    (est + 1.96 * se) %>% formatC(digits = 2, format = "f"),
+    ")"
+  )
+    
+  return(c(
+    est %>% formatC(digits = 2, format = "f"), 
+    paste0("(", se %>% formatC(digits = 2, format = "f"), ")"),
+    ci
+    ))
+  
+}
+
+cbind(
+  c("open", "pctpostwritten", "written", "written_all"),
+  map(
+    c("open", "post_writ", "post_total_w", "post_total_w_all"),
+    ~ make_table_6_4(df, ., covar0 = TRUE)
+  ) %>% 
+    bind_cols() %>% 
+    t(),
+  map(
+    c("open", "post_writ", "post_total_w", "post_total_w_all"),
+    ~ make_table_6_4(df, ., covar0 = FALSE)
+  ) %>% 
+    bind_cols() %>% 
+    t(),
+  map(
+    c("open", "post_writ", "post_total_w", "post_total_w_all"),
+    ~ make_table_6_4_diff(df, .)
+  ) %>% 
+    bind_cols() %>% 
+    t()
+  ) %>% 
+  set_rownames(NULL) %>% 
+  kable("html", booktabs = TRUE, align = c("l", rep("c", 9))) %>% 
+  add_header_above(
+    c(" ", rep(c("$\\tau$", "($\\widehat{\\text{s.e.}}$)", "95\\% C.I."), 2), "EST", "($\\widehat{\\text{s.e.}}$)", "95\\% C.I.")
+  ) %>% 
+  add_header_above(
+    c("", "($N$ = 40)" = 3, "($N$ = 67)" = 3, " " = 3)
+  ) %>% 
+  add_header_above(
+    c("Variable", "pctprewritten = 0" = 3, "pctprewritten $\\gt$ 0" = 3, "Difference" = 3)
+  ) %>% 
+  kable_styling(position = "center")
+
+
+
+
+```

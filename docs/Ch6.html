@@ -276,6 +276,8 @@ packages &lt;- c(
   &quot;grid&quot;,
   &quot;gridExtra&quot;,
   &quot;countrycode&quot;,
+  &quot;lmtest&quot;,
+  &quot;sandwich&quot;,
   &quot;scales&quot;,
   &quot;haven&quot;,
   &quot;kableExtra&quot;,
@@ -377,6 +379,9 @@ all_school_sum &lt;- df %&gt;%
   select(-fn) %&gt;% 
   as.matrix() %&gt;% 
   t()</code></pre>
+</div>
+<div id="summary-statistics-replication-of-table-6.1" class="section level2">
+<h2>Summary statistics (Replication of Table 6.1)</h2>
 <pre class="r"><code>cbind(
   c(&quot;pctprewritten&quot;, &quot;open&quot;, &quot;pctpostwritten&quot;, &quot;written&quot;, &quot;written_all&quot;),
   control_treat_sum, all_school_sum
@@ -581,6 +586,632 @@ written_all
 </td>
 <td style="text-align:left;">
 1.43
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="estimates-of-components-of-variance-of-estimator-for-the-effect-on-open-variable-replication-of-table-6.2" class="section level2">
+<h2>Estimates of components of variance of estimator for the effect on <code>open</code> variable (Replication of Table 6.2)</h2>
+<pre class="r"><code>df_control &lt;- df %&gt;% filter(treatment == 0)
+df_treatment &lt;- df %&gt;% filter(treatment == 1)
+
+# mean of outcome for control
+Yobs_c &lt;- mean(df_control$open)
+# mean of outcome for treatment
+Yobs_t &lt;- mean(df_treatment$open)
+# estimate for average treatment effect
+tau_hat &lt;- Yobs_t - Yobs_c
+
+# estimated variance for control (obtain as SD)
+s_c &lt;- sqrt(sum((df_control$open - Yobs_c)^2) / (nrow(df_control) - 1))
+# estimated variance for treatment (obtain as SD)
+s_t &lt;- sqrt(sum((df_treatment$open - Yobs_t)^2) / (nrow(df_treatment) - 1))
+# estimated variance for all (obtain as SD)
+s &lt;- sqrt(
+  (s_c^2 * (nrow(df_control) - 1) + s_t^2 * (nrow(df_treatment) - 1)) / 
+    (nrow(df) - 2) 
+  )
+
+# Sampling variance estimates, ignoring heterogeneous treatment effects (obtain as SD)
+sd_neyman &lt;- sqrt(s_c^2 / nrow(df_control) + s_t^2 / nrow(df_control))
+# Sampling variance estimates under constant treatment effects (obtain as SD)
+sd_const &lt;- sqrt(s^2 * (1 / nrow(df_control) + 1 / nrow(df_treatment)))
+# Sampling variance estimates when potential outcomes are perfectly correlated (obtain as SD)
+sd_rho1 &lt;- sqrt(
+  s_c^2 * (nrow(df_treatment) / (nrow(df) * nrow(df_control))) +
+    s_t^2 * (nrow(df_control) / (nrow(df) * nrow(df_treatment))) +
+    s_c * s_t * 2 / nrow(df)
+  )
+
+bind_cols(
+  name = c(
+    &quot;$\\bar{Y}_c^{obs}$&quot;, &quot;$\\bar{Y}_t^{obs}$&quot;, &quot;$\\hat{\\tau}$&quot;,
+    &quot;$s_c^2$&quot;, &quot;$s_t^2$&quot;, &quot;$s^2$&quot;,
+    &quot;$\\hat{V}^{\\text{neyman}} = s^2 / N_c + s^2 / N_t$&quot;,
+    &quot;$\\hat{V}^{\\text{const}} = s^2 \\cdot \\left( 1 / N_c +  1 / N_t \\right)$&quot;,
+    &quot;$\\hat{V}^{\\rho_{tc} = 1} = s_c^2 \\cdot \\left( N_t / (N \\cdot N_c ) \\right) + s_t^2 \\cdot \\left( N_c / (N \\cdot N_t) \\right) + s_c \\cdot s_t \\cdot \\left( 2 / N \\right)$&quot;
+  ),
+  value = c(
+    Yobs_c, Yobs_t, tau_hat,
+    s_c, s_t, s,
+    sd_neyman, sd_const, sd_rho1
+  )
+) %&gt;% 
+  mutate(value = formatC(value, digits = 2, format = &quot;f&quot;)) %&gt;% 
+  mutate(
+    value = ifelse(row_number() &gt;= 4, paste0(&quot;$&quot;, value, &quot;^2$&quot;), paste0(&quot;$&quot;, value, &quot;$&quot;))
+  ) %&gt;% 
+  set_colnames(NULL) %&gt;% 
+  kable(&quot;html&quot;, booktabs = TRUE) %&gt;% 
+  pack_rows(index = c(
+    &quot;Estimated means&quot; = 3,
+    &quot;Estimated variance compnents&quot; = 3,
+    &quot;Sampling variance estimates&quot; = 3
+  )) %&gt;% 
+  kable_styling(position = &quot;center&quot;)</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<tbody>
+<tr grouplength="3">
+<td colspan="2" style="border-bottom: 1px solid;">
+<strong>Estimated means</strong>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
+<span class="math inline">\(\bar{Y}_c^{obs}\)</span>
+</td>
+<td style="text-align:left;">
+<span class="math inline">\(0.58\)</span>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
+<span class="math inline">\(\bar{Y}_t^{obs}\)</span>
+</td>
+<td style="text-align:left;">
+<span class="math inline">\(0.80\)</span>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
+<span class="math inline">\(\hat{\tau}\)</span>
+</td>
+<td style="text-align:left;">
+<span class="math inline">\(0.22\)</span>
+</td>
+</tr>
+<tr grouplength="3">
+<td colspan="2" style="border-bottom: 1px solid;">
+<strong>Estimated variance compnents</strong>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
+<span class="math inline">\(s_c^2\)</span>
+</td>
+<td style="text-align:left;">
+<span class="math inline">\(0.19^2\)</span>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
+<span class="math inline">\(s_t^2\)</span>
+</td>
+<td style="text-align:left;">
+<span class="math inline">\(0.13^2\)</span>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
+<span class="math inline">\(s^2\)</span>
+</td>
+<td style="text-align:left;">
+<span class="math inline">\(0.16^2\)</span>
+</td>
+</tr>
+<tr grouplength="3">
+<td colspan="2" style="border-bottom: 1px solid;">
+<strong>Sampling variance estimates</strong>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
+<span class="math inline">\(\hat{V}^{\text{neyman}} = s^2 / N_c + s^2 / N_t\)</span>
+</td>
+<td style="text-align:left;">
+<span class="math inline">\(0.03^2\)</span>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
+<span class="math inline">\(\hat{V}^{\text{const}} = s^2 \cdot \left( 1 / N_c + 1 / N_t \right)\)</span>
+</td>
+<td style="text-align:left;">
+<span class="math inline">\(0.03^2\)</span>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
+<span class="math inline">\(\hat{V}^{\rho_{tc} = 1} = s_c^2 \cdot \left( N_t / (N \cdot N_c ) \right) + s_t^2 \cdot \left( N_c / (N \cdot N_t) \right) + s_c \cdot s_t \cdot \left( 2 / N \right)\)</span>
+</td>
+<td style="text-align:left;">
+<span class="math inline">\(0.03^2\)</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="estimates-of-and-confidence-intervals-for-average-treatment-effects-replication-of-table-6.3" class="section level2">
+<h2>Estimates of, and confidence intervals for average treatment effects (Replication of Table 6.3)</h2>
+<pre class="r"><code>make_table_6_3 &lt;- function(df, outcome) {
+  
+  df_control &lt;- df %&gt;% filter(treatment == 0)
+  df_treatment &lt;- df %&gt;% filter(treatment == 1)
+  
+  # mean of outcome for control
+  Yobs_c &lt;- mean(df_control %&gt;% pull(outcome))
+  # mean of outcome for treatment
+  Yobs_t &lt;- mean(df_treatment %&gt;% pull(outcome))
+  # estimate for average treatment effect
+  tau_hat &lt;- Yobs_t - Yobs_c
+  
+  # estimated variance for control (obtain as SD)
+  s_c &lt;- sqrt(sum((df_control %&gt;% pull(outcome) - Yobs_c)^2) / (nrow(df_control) - 1))
+  # estimated variance for treatment (obtain as SD)
+  s_t &lt;- sqrt(sum((df_treatment %&gt;% pull(outcome) - Yobs_t)^2) / (nrow(df_treatment) - 1))
+  # Sampling variance estimates, ignoring heterogeneous treatment effects (obtain as SD)
+  sd_neyman &lt;- sqrt(s_c^2 / nrow(df_control) + s_t^2 / nrow(df_control))
+  
+  ci &lt;- paste0(
+    &quot;(&quot;,
+    (tau_hat - 1.96 * sd_neyman) %&gt;% formatC(digits = 2, format = &quot;f&quot;), &quot;, &quot;,
+    (tau_hat + 1.96 * sd_neyman) %&gt;% formatC(digits = 2, format = &quot;f&quot;),
+    &quot;)&quot;
+  )
+    
+  return(c(
+    tau_hat %&gt;% formatC(digits = 2, format = &quot;f&quot;), 
+    paste0(&quot;(&quot;, sd_neyman %&gt;% formatC(digits = 2, format = &quot;f&quot;), &quot;)&quot;),
+    ci
+    ))
+  
+}
+
+cbind(
+  c(&quot;open&quot;, &quot;pctpostwritten&quot;, &quot;written&quot;, &quot;written_all&quot;),
+  map(
+    c(&quot;open&quot;, &quot;post_writ&quot;, &quot;post_total_w&quot;, &quot;post_total_w_all&quot;),
+    ~ make_table_6_3(df, .)
+  ) %&gt;% 
+    bind_cols() %&gt;% 
+    t()
+  ) %&gt;% 
+  set_rownames(NULL) %&gt;% 
+  kable(&quot;html&quot;, booktabs = TRUE, align = c(&quot;l&quot;, &quot;c&quot;, &quot;c&quot;, &quot;c&quot;)) %&gt;% 
+  add_header_above(
+    c(&quot;Variable&quot;, &quot;$\\widehat{ATE}$&quot;, &quot;$(\\widehat{\\text{s.e.}})$&quot;, &quot;95\\% C.I.&quot;)
+  ) %&gt;% 
+  kable_styling(position = &quot;center&quot;)</code></pre>
+<pre><code>## New names:
+## * NA -&gt; ...1
+## * NA -&gt; ...2
+## * NA -&gt; ...3
+## * NA -&gt; ...4</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Variable
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+<span class="math inline">\(\widehat{ATE}\)</span>
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+<span class="math inline">\((\widehat{\text{s.e.}})\)</span>
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+95% C.I.
+</div>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+open
+</td>
+<td style="text-align:center;">
+0.22
+</td>
+<td style="text-align:center;">
+(0.03)
+</td>
+<td style="text-align:center;">
+(0.15, 0.28)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+pctpostwritten
+</td>
+<td style="text-align:center;">
+0.05
+</td>
+<td style="text-align:center;">
+(0.04)
+</td>
+<td style="text-align:center;">
+(-0.03, 0.13)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+written
+</td>
+<td style="text-align:center;">
+0.17
+</td>
+<td style="text-align:center;">
+(0.08)
+</td>
+<td style="text-align:center;">
+(0.00, 0.33)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+written_all
+</td>
+<td style="text-align:center;">
+0.14
+</td>
+<td style="text-align:center;">
+(0.07)
+</td>
+<td style="text-align:center;">
+(0.00, 0.27)
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="estimates-of-and-confidence-intervals-for-average-treatment-effects-by-covariate-replication-of-table-6.4" class="section level2">
+<h2>estimates of, and confidence intervals for average treatment effects by covariate (Replication of Table 6.4)</h2>
+<pre class="r"><code>make_table_6_4 &lt;- function(df, outcome, covar0) {
+  
+  if (covar0 == TRUE) {
+    df_control &lt;- df %&gt;% filter(treatment == 0) %&gt;% filter(pre_writ == 0)
+    df_treatment &lt;- df %&gt;% filter(treatment == 1) %&gt;% filter(pre_writ == 0)
+  } else {
+    df_control &lt;- df %&gt;% filter(treatment == 0) %&gt;% filter(pre_writ &gt; 0)
+    df_treatment &lt;- df %&gt;% filter(treatment == 1) %&gt;% filter(pre_writ &gt; 0)
+  }
+  
+  # Average treatment effects for samples with pre-writ == 0
+  # mean of outcome for control
+  Yobs_c &lt;- mean(df_control %&gt;% pull(outcome))
+  # mean of outcome for treatment
+  Yobs_t &lt;- mean(df_treatment %&gt;% pull(outcome))
+  # estimate for average treatment effect
+  tau_hat &lt;- Yobs_t - Yobs_c
+  
+  # estimated variance for control (obtain as SD)
+  s_c &lt;- sqrt(sum((df_control %&gt;% pull(outcome) - Yobs_c)^2) / (nrow(df_control) - 1))
+  # estimated variance for treatment (obtain as SD)
+  s_t &lt;- sqrt(sum((df_treatment %&gt;% pull(outcome) - Yobs_t)^2) / (nrow(df_treatment) - 1))
+  # Sampling variance estimates, ignoring heterogeneous treatment effects (obtain as SD)
+  sd_neyman &lt;- sqrt(s_c^2 / nrow(df_control) + s_t^2 / nrow(df_control))
+  
+  ci &lt;- paste0(
+    &quot;(&quot;,
+    (tau_hat - 1.96 * sd_neyman) %&gt;% formatC(digits = 2, format = &quot;f&quot;), &quot;, &quot;,
+    (tau_hat + 1.96 * sd_neyman) %&gt;% formatC(digits = 2, format = &quot;f&quot;),
+    &quot;)&quot;
+  )
+    
+  return(c(
+    tau_hat %&gt;% formatC(digits = 2, format = &quot;f&quot;), 
+    paste0(&quot;(&quot;, sd_neyman %&gt;% formatC(digits = 2, format = &quot;f&quot;), &quot;)&quot;),
+    ci
+    ))
+  
+}
+
+make_table_6_4_diff &lt;- function(df, outcome) {
+  
+  reg_res &lt;- lm(as.formula(paste(outcome, &quot;treatment*(pre_writ == 0)&quot;, sep = &quot; ~ &quot;)), df) %&gt;% 
+    coeftest(., vcov = vcovHC(., type = &quot;HC1&quot;))
+  est &lt;- reg_res[&quot;treatment:pre_writ == 0TRUE&quot;, &quot;Estimate&quot;]
+  se &lt;- reg_res[&quot;treatment:pre_writ == 0TRUE&quot;, &quot;Std. Error&quot;]
+  
+  ci &lt;- paste0(
+    &quot;(&quot;,
+    (est - 1.96 * se) %&gt;% formatC(digits = 2, format = &quot;f&quot;), &quot;, &quot;,
+    (est + 1.96 * se) %&gt;% formatC(digits = 2, format = &quot;f&quot;),
+    &quot;)&quot;
+  )
+    
+  return(c(
+    est %&gt;% formatC(digits = 2, format = &quot;f&quot;), 
+    paste0(&quot;(&quot;, se %&gt;% formatC(digits = 2, format = &quot;f&quot;), &quot;)&quot;),
+    ci
+    ))
+  
+}
+
+cbind(
+  c(&quot;open&quot;, &quot;pctpostwritten&quot;, &quot;written&quot;, &quot;written_all&quot;),
+  map(
+    c(&quot;open&quot;, &quot;post_writ&quot;, &quot;post_total_w&quot;, &quot;post_total_w_all&quot;),
+    ~ make_table_6_4(df, ., covar0 = TRUE)
+  ) %&gt;% 
+    bind_cols() %&gt;% 
+    t(),
+  map(
+    c(&quot;open&quot;, &quot;post_writ&quot;, &quot;post_total_w&quot;, &quot;post_total_w_all&quot;),
+    ~ make_table_6_4(df, ., covar0 = FALSE)
+  ) %&gt;% 
+    bind_cols() %&gt;% 
+    t(),
+  map(
+    c(&quot;open&quot;, &quot;post_writ&quot;, &quot;post_total_w&quot;, &quot;post_total_w_all&quot;),
+    ~ make_table_6_4_diff(df, .)
+  ) %&gt;% 
+    bind_cols() %&gt;% 
+    t()
+  ) %&gt;% 
+  set_rownames(NULL) %&gt;% 
+  kable(&quot;html&quot;, booktabs = TRUE, align = c(&quot;l&quot;, rep(&quot;c&quot;, 9))) %&gt;% 
+  add_header_above(
+    c(&quot; &quot;, rep(c(&quot;$\\tau$&quot;, &quot;($\\widehat{\\text{s.e.}}$)&quot;, &quot;95\\% C.I.&quot;), 2), &quot;EST&quot;, &quot;($\\widehat{\\text{s.e.}}$)&quot;, &quot;95\\% C.I.&quot;)
+  ) %&gt;% 
+  add_header_above(
+    c(&quot;&quot;, &quot;($N$ = 40)&quot; = 3, &quot;($N$ = 67)&quot; = 3, &quot; &quot; = 3)
+  ) %&gt;% 
+  add_header_above(
+    c(&quot;Variable&quot;, &quot;pctprewritten = 0&quot; = 3, &quot;pctprewritten $\\gt$ 0&quot; = 3, &quot;Difference&quot; = 3)
+  ) %&gt;% 
+  kable_styling(position = &quot;center&quot;)</code></pre>
+<pre><code>## New names:
+## * NA -&gt; ...1
+## * NA -&gt; ...2
+## * NA -&gt; ...3
+## * NA -&gt; ...4
+## New names:
+## * NA -&gt; ...1
+## * NA -&gt; ...2
+## * NA -&gt; ...3
+## * NA -&gt; ...4
+## New names:
+## * NA -&gt; ...1
+## * NA -&gt; ...2
+## * NA -&gt; ...3
+## * NA -&gt; ...4</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Variable
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="3">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+pctprewritten = 0
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="3">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+pctprewritten <span class="math inline">\(\gt\)</span> 0
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="3">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Difference
+</div>
+</th>
+</tr>
+<tr>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="3">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(<span class="math inline">\(N\)</span> = 40)
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="3">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(<span class="math inline">\(N\)</span> = 67)
+</div>
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="3">
+</th>
+</tr>
+<tr>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+<span class="math inline">\(\tau\)</span>
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(<span class="math inline">\(\widehat{\text{s.e.}}\)</span>)
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+95% C.I.
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+<span class="math inline">\(\tau\)</span>
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(<span class="math inline">\(\widehat{\text{s.e.}}\)</span>)
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+95% C.I.
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+EST
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(<span class="math inline">\(\widehat{\text{s.e.}}\)</span>)
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+95% C.I.
+</div>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+open
+</td>
+<td style="text-align:center;">
+0.23
+</td>
+<td style="text-align:center;">
+(0.05)
+</td>
+<td style="text-align:center;">
+(0.14, 0.32)
+</td>
+<td style="text-align:center;">
+0.21
+</td>
+<td style="text-align:center;">
+(0.04)
+</td>
+<td style="text-align:center;">
+(0.13, 0.29)
+</td>
+<td style="text-align:center;">
+0.02
+</td>
+<td style="text-align:center;">
+(0.06)
+</td>
+<td style="text-align:center;">
+(-0.10, 0.14)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+pctpostwritten
+</td>
+<td style="text-align:center;">
+-0.04
+</td>
+<td style="text-align:center;">
+(0.06)
+</td>
+<td style="text-align:center;">
+(-0.16, 0.08)
+</td>
+<td style="text-align:center;">
+0.11
+</td>
+<td style="text-align:center;">
+(0.05)
+</td>
+<td style="text-align:center;">
+(0.01, 0.21)
+</td>
+<td style="text-align:center;">
+-0.15
+</td>
+<td style="text-align:center;">
+(0.08)
+</td>
+<td style="text-align:center;">
+(-0.31, 0.00)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+written
+</td>
+<td style="text-align:center;">
+0.20
+</td>
+<td style="text-align:center;">
+(0.10)
+</td>
+<td style="text-align:center;">
+(-0.00, 0.41)
+</td>
+<td style="text-align:center;">
+0.18
+</td>
+<td style="text-align:center;">
+(0.10)
+</td>
+<td style="text-align:center;">
+(-0.02, 0.38)
+</td>
+<td style="text-align:center;">
+0.03
+</td>
+<td style="text-align:center;">
+(0.15)
+</td>
+<td style="text-align:center;">
+(-0.26, 0.31)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+written_all
+</td>
+<td style="text-align:center;">
+0.04
+</td>
+<td style="text-align:center;">
+(0.08)
+</td>
+<td style="text-align:center;">
+(-0.10, 0.19)
+</td>
+<td style="text-align:center;">
+0.22
+</td>
+<td style="text-align:center;">
+(0.09)
+</td>
+<td style="text-align:center;">
+(0.05, 0.39)
+</td>
+<td style="text-align:center;">
+-0.18
+</td>
+<td style="text-align:center;">
+(0.12)
+</td>
+<td style="text-align:center;">
+(-0.40, 0.05)
 </td>
 </tr>
 </tbody>
