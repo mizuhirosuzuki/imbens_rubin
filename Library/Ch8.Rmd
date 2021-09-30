@@ -8,7 +8,7 @@ date: ""
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r ScatterLabels, warning = FALSE, results = "hide"}
+```{r, warning = FALSE, results = "hide"}
 # Install and load packages ---------------
 packages <- c(
   "tidyverse",

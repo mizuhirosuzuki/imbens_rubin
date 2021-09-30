@@ -2,7 +2,7 @@
 title: "Imbens-Rubin textbook replication codes"
 output: 
   html_document:
-    theme: cerulean
+    theme: cosmo
     #toc: true
     #toc_float: true
     toc_collapsed: true
@@ -11,4 +11,5 @@ output:
 
 
 * [Chapter 5 (simulations)](Ch5_sim.html)
+* [Chapter 5 (application)](Ch5_data.html)
 * [Chapter 6](Ch6.html)

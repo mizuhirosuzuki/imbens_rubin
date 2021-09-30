@@ -9,7 +9,7 @@ navbar:
       href: https://github.com/mizuhirosuzuki/imbens_rubin
 output: 
   html_document:
-    theme: cerulean
+    theme: cosmo
     #toc: true
     #toc_float: true
     toc_collapsed: true

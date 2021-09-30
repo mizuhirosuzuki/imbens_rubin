@@ -16,7 +16,7 @@
 <script src="site_libs/header-attrs-2.10/header-attrs.js"></script>
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="site_libs/bootstrap-3.3.5/css/cerulean.min.css" rel="stylesheet" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
@@ -290,6 +290,7 @@ pacman::p_load(packages, character.only = TRUE)</code></pre>
 <h1>Data preparation</h1>
 <div id="load-datasets" class="section level2">
 <h2>Load datasets</h2>
+<p>The data can be downloaded from <a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=hdl:1902.1/VZJXRPURTJ">here</a>.</p>
 <pre class="r"><code># data of treatment assignment by school
 treatment_school &lt;- read_dta(&quot;../data/Duflo_Hanna_Ryan/data/Incentives_FINAL/Raw-Data/Tests/treatschool.dta&quot;) %&gt;% 
   mutate(treatment = 1)
@@ -945,26 +946,25 @@ make_table_6_4_diff &lt;- function(df, outcome) {
     ci
     ))
   
-}
-
-cbind(
+}</code></pre>
+<pre class="r"><code>cbind(
   c(&quot;open&quot;, &quot;pctpostwritten&quot;, &quot;written&quot;, &quot;written_all&quot;),
   map(
     c(&quot;open&quot;, &quot;post_writ&quot;, &quot;post_total_w&quot;, &quot;post_total_w_all&quot;),
     ~ make_table_6_4(df, ., covar0 = TRUE)
-  ) %&gt;% 
+    ) %&gt;% 
     bind_cols() %&gt;% 
     t(),
   map(
     c(&quot;open&quot;, &quot;post_writ&quot;, &quot;post_total_w&quot;, &quot;post_total_w_all&quot;),
     ~ make_table_6_4(df, ., covar0 = FALSE)
-  ) %&gt;% 
+    ) %&gt;% 
     bind_cols() %&gt;% 
     t(),
   map(
     c(&quot;open&quot;, &quot;post_writ&quot;, &quot;post_total_w&quot;, &quot;post_total_w_all&quot;),
     ~ make_table_6_4_diff(df, .)
-  ) %&gt;% 
+    ) %&gt;% 
     bind_cols() %&gt;% 
     t()
   ) %&gt;% 

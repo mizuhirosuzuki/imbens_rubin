@@ -1,5 +1,5 @@
 ---
-title: "Chapter 6"
+title: "Chapter 5"
 author: ""
 date: ""
 ---
@@ -8,18 +8,15 @@ date: ""
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r ScatterLabels, warning = FALSE, results = "hide"}
+```{r, warning = FALSE, results = "hide"}
 # Install and load packages ---------------
 packages <- c(
   "tidyverse",
   "ggrepel",
-  "WDI",
   "forcats",
+  "latex2exp",
   "grid",
   "gridExtra",
-  "countrycode",
-  "lmtest",
-  "sandwich",
   "scales",
   "haven",
   "kableExtra",
@@ -35,7 +32,9 @@ pacman::p_load(packages, character.only = TRUE)
 
 ## Load datasets
 
-```{r}
+The data can be downloaded [here](https://microdata.worldbank.org/index.php/catalog/3545).
+
+```{r, eval = FALSE}
 
 # data of treatment assignment by school
 df <- read_dta("../data/Bloom2020/table2/table2.dta") 
@@ -46,25 +45,293 @@ df_clean <- df %>%
   group_by(fcode) %>% 
   summarise_at(vars(treatment2011, management), mean, na.rm = TRUE)
 
-diff_1 <- (
+```
+
+```{r}
+get_perm_res <- function(df_clean, treatment_perm, tau, type) {
+  
+  df_tmp <- df_clean %>% 
+    mutate(
+      Y1 = management * (treatment2011 == 1) + (management + tau) * (treatment2011 == 0),
+      Y0 = management * (treatment2011 == 0) + (management - tau) * (treatment2011 == 1),
+      )
+  
+  if (type == "mean") {
+    output <- map_dbl(
+      seq(ncol(treatment_perm)),
+      ~ abs(
+        mean((df_tmp %>% pull(Y1))[treatment_perm[, .]]) - 
+          mean((df_tmp %>% pull(Y0))[-treatment_perm[, .]]) - tau
+      )
+    )
+  } else if (type == "rank") {
+    output <- map_dbl(
+      seq(ncol(treatment_perm)),
+      ~ abs(
+        mean(rank(df_tmp %>% pull(Y1))[treatment_perm[, .]]) - 
+          mean(rank(df_tmp %>% pull(Y0))[-treatment_perm[, .]])
+        )
+    )
+  }
+  
+  return(output)
+}
+```
+
+## $p$-values for tests of constant treatment effects (replication of Table 5.7 but with different data)
+
+```{r, eval = FALSE}
+treatment_perm <- combn(nrow(df_clean), nrow(df_clean %>% filter(treatment2011 == 1)))
+```
+
+```{r, eval = FALSE, echo = FALSE}
+saveRDS(treatment_perm, "rds/Ch5/treatment_perm.Rds")
+```
+
+```{r, echo = FALSE}
+treatment_perm <- readRDS("rds/Ch5/treatment_perm.Rds")
+```
+
+```{r}
+tau_seq <- seq(-0.10, 0.35, by = 0.025)
+```
+
+```{r, eval = FALSE}
+
+mean_diffs <- map_dbl(
+  tau_seq,
+  ~ mean(
+    get_perm_res(df_clean, treatment_perm, ., type = "mean") > (
+      abs(
+        mean(df_clean %>% filter(treatment2011 == 1) %>% .$management) -
+          mean(df_clean %>% filter(treatment2011 == 0) %>% .$management) - .
+        )
+      )
+    )
+)
+
+rank_diffs <- map_dbl(
+  tau_seq,
+  function(x) mean(
+    get_perm_res(df_clean, treatment_perm, x, type = "rank") > abs(
+      mean(rank(
+        df_clean %>% 
+          mutate(
+            Y1 = management * (treatment2011 == 1) + (management + x) * (treatment2011 == 0),
+            Y0 = management * (treatment2011 == 0) + (management - x) * (treatment2011 == 1),
+            ) %>% 
+          pull(Y1)
+      )[df_clean$treatment2011 == 1]) -
+      mean(rank(
+        df_clean %>% 
+          mutate(
+            Y1 = management * (treatment2011 == 1) + (management + x) * (treatment2011 == 0),
+            Y0 = management * (treatment2011 == 0) + (management - x) * (treatment2011 == 1),
+            ) %>% 
+          pull(Y0)
+      )[df_clean$treatment2011 == 0])
+    )
+  )
+)
+
+```
+
+```{r, eval = FALSE, echo = FALSE}
+
+saveRDS(mean_diffs, "rds/Ch5/mean_diffs.Rds")
+saveRDS(rank_diffs, "rds/Ch5/rank_diffs.Rds")
+
+```
+
+```{r, echo = FALSE}
+
+mean_diffs <- readRDS("rds/Ch5/mean_diffs.Rds")
+rank_diffs <- readRDS("rds/Ch5/rank_diffs.Rds")
+
+```
+
+```{r}
+
+tibble(
+  tau = tau_seq,
+  mean_diff_p = mean_diffs %>% formatC(digits = 3, format = "f"),
+  rank_diff_p = rank_diffs %>% formatC(digits = 3, format = "f")
+) %>% 
+  mutate(
+    mean_diff_p = cell_spec(
+      mean_diff_p, 
+      color = ifelse(mean_diff_p >= 0.10, "red", "black"),
+    ),
+    rank_diff_p = cell_spec(
+      rank_diff_p, 
+      color = ifelse(rank_diff_p >= 0.10, "red", "black"),
+    )
+  ) %>% 
+  set_colnames(NULL) %>% 
+  kable("html", escape = FALSE, booktabs = TRUE, align = c("l", rep("c", 2))) %>% 
+  add_header_above(
+    c("Hypothesized treatment effect", "$p$-value (level)", "$p$-value (rank)")
+  ) %>% 
+  kable_styling(position = "center")
+
+
+```
+
+## $p$-values estimated through different numbers of simulations
+
+```{r, eval = FALSE}
+
+set.seed(123)
+
+actual_mean_diff <- abs(
   mean(df_clean %>% filter(treatment2011 == 1) %>% .$management) -
     mean(df_clean %>% filter(treatment2011 == 0) %>% .$management)
   )
 
-treatment_perm <- combn(nrow(df_clean), nrow(df_clean %>% filter(treatment2011 == 1)))
+perm_sim_res <- map_dbl(
+  c(100, 1000, 10000),
+  ~ mean(
+    get_perm_res(df_clean, treatment_perm[, sample(seq(ncol(treatment_perm)), .)], .0, type = "mean") >
+      actual_mean_diff
+    )
+  )
 
-perm_res <- map_dbl(
-  seq(ncol(treatment_perm)),
-  ~ mean((df_clean %>% pull(management))[treatment_perm[, .]]) - mean((df_clean %>% pull(management))[-treatment_perm[, .]])
+true_p <- mean(
+  get_perm_res(df_clean, treatment_perm, .0, type = "mean") > actual_mean_diff
 )
 
-ggplot() +
-  geom_histogram(aes(x = perm_res), binwidth = 0.025) +
-  theme_minimal() +
-  geom_vline(xintercept = c(quantile(perm_res, .90), quantile(perm_res, .10)), linetype = 5) +
-  geom_vline(xintercept = c(quantile(perm_res, .95), quantile(perm_res, .05)), linetype = 4) +
-  geom_vline(xintercept = c(quantile(perm_res, .99), quantile(perm_res, .01)), linetype = 3) +
-  geom_vline(xintercept = diff_1, color = "red")
-  
+```
+
+```{r, eval = FALSE, echo = FALSE}
+saveRDS(perm_sim_res, "rds/Ch5/perm_sim_res.Rds")
+saveRDS(true_p, "rds/Ch5/true_p.Rds")
+```
+
+```{r, echo = FALSE}
+perm_sim_res <- readRDS("rds/Ch5/perm_sim_res.Rds")
+true_p <- readRDS("rds/Ch5/true_p.Rds")
+```
+
+```{r}
+
+cbind(
+  c(100, 1000, 10000, ncol(treatment_perm)) %>% formatC(format = "d", big.mark = ","),
+  c(perm_sim_res, true_p) %>% format(digits = 2, format = "f"),
+  c(
+    paste0(
+      "(",
+      sqrt(perm_sim_res * (1 - perm_sim_res) / c(100, 1000, 10000)) %>% format(digits = 2, format = "f"),
+      ")"
+      ),
+    ""
+  )
+) %>% 
+  kable("html", booktabs = TRUE, align = c("l", rep("c", 2))) %>% 
+  add_header_above(
+    c("Number of simulations (the last row is the exact test)", "$p$-value", "($\\widehat{\\text{s.e.}}$)")
+  ) %>% 
+  kable_styling(position = "center")
 
 ```
+
+## Bonus 1: Exact Fisher test and distribution of permutation test
+
+```{r, eval = FALSE}
+
+perm_res <- get_perm_res(df_clean, treatment_perm, .0, type = "mean")
+actual_mean_diff <- abs(
+  mean(df_clean %>% filter(treatment2011 == 1) %>% .$management) -
+    mean(df_clean %>% filter(treatment2011 == 0) %>% .$management)
+  )
+
+```
+
+```{r, eval = FALSE, echo = FALSE}
+
+saveRDS(perm_res, "rds/Ch5/perm_res.Rds")
+saveRDS(actual_mean_diff, "rds/Ch5/actual_mean_diff.Rds")
+
+```
+
+```{r, echo = FALSE}
+
+perm_res <- readRDS("rds/Ch5/perm_res.Rds")
+actual_mean_diff <- readRDS("rds/Ch5/actual_mean_diff.Rds")
+
+```
+
+```{r}
+
+ggplot() +
+  geom_histogram(aes(x = perm_res), binwidth = 0.01) +
+  # theme_minimal() +
+  geom_vline(xintercept = quantile(perm_res, .90), linetype = 5) +
+  geom_vline(xintercept = quantile(perm_res, .95), linetype = 4) +
+  geom_vline(xintercept = quantile(perm_res, .99), linetype = 3) +
+  geom_vline(xintercept = actual_mean_diff, color = "red") +
+  theme(
+    panel.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(colour = "black")
+    )
+  
+```
+
+## Bonus 2: Standard errors in Table 5.8.
+
+```{r, eval = FALSE}
+
+set.seed(111)
+
+perm_test_100 <- map_dbl(
+  seq(10000),
+  ~ mean(
+    get_perm_res(df_clean, treatment_perm[, sample(seq(ncol(treatment_perm)), 100)], .0, type = "mean") >= actual_mean_diff
+  )
+)
+
+perm_test_100_df <- tibble(
+  p_val = perm_test_100
+  ) %>% 
+  mutate(
+    ci_lower = p_val - 1.645 * sqrt(p_val * (1 - p_val) / 100),
+    ci_upper = p_val + 1.645 * sqrt(p_val * (1 - p_val) / 100),
+    true_in = ((true_p >= ci_lower) & (true_p <= ci_upper)),
+    n = row_number()
+      )
+
+```
+
+```{r, eval = FALSE, echo = FALSE}
+saveRDS(perm_test_100_df, "rds/Ch5/perm_test_100_df.Rds")
+```
+
+```{r, echo = FALSE}
+perm_test_100_df <- readRDS("rds/Ch5/perm_test_100_df.Rds")
+```
+
+
+```{r}
+print(perm_test_100_df$true_in %>% mean)
+```
+
+```{r}
+
+ggplot(perm_test_100_df %>% slice(seq(100)), aes(x = n, y = p_val, ymin = ci_lower, ymax = ci_upper)) +
+  geom_linerange(aes(color = (true_in == TRUE)), alpha = 0.8) +
+  geom_hline(yintercept = true_p, alpha = 0.5) +
+  theme_minimal() +
+  ylab(TeX("$p$-value")) +
+  xlab("") +
+  scale_color_manual(
+    values = c("red", "gray"),
+    name = TeX("True $p$-value in CI"),
+    labels = c("No", "Yes")
+  ) +
+  theme(axis.text.x = element_blank())
+
+```
+
+
+

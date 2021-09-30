@@ -8,7 +8,7 @@ date: ""
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r ScatterLabels, warning = FALSE, results = "hide"}
+```{r, warning = FALSE, results = "hide"}
 # Install and load packages ---------------
 packages <- c(
   "tidyverse",
@@ -34,6 +34,8 @@ pacman::p_load(packages, character.only = TRUE)
 # Data preparation
 
 ## Load datasets
+
+The data can be downloaded from [here](https://dataverse.harvard.edu/dataset.xhtml?persistentId=hdl:1902.1/VZJXRPURTJ).
 
 ```{r}
 
@@ -357,24 +359,28 @@ make_table_6_4_diff <- function(df, outcome) {
   
 }
 
+```
+
+```{r}
+
 cbind(
   c("open", "pctpostwritten", "written", "written_all"),
   map(
     c("open", "post_writ", "post_total_w", "post_total_w_all"),
     ~ make_table_6_4(df, ., covar0 = TRUE)
-  ) %>% 
+    ) %>% 
     bind_cols() %>% 
     t(),
   map(
     c("open", "post_writ", "post_total_w", "post_total_w_all"),
     ~ make_table_6_4(df, ., covar0 = FALSE)
-  ) %>% 
+    ) %>% 
     bind_cols() %>% 
     t(),
   map(
     c("open", "post_writ", "post_total_w", "post_total_w_all"),
     ~ make_table_6_4_diff(df, .)
-  ) %>% 
+    ) %>% 
     bind_cols() %>% 
     t()
   ) %>% 
