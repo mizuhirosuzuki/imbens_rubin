@@ -13,3 +13,5 @@ output:
 * [Chapter 5 (simulations)](Ch5_sim.html)
 * [Chapter 5 (application)](Ch5_data.html)
 * [Chapter 6](Ch6.html)
+* [Chapter 7](Ch7.html)
+* [Chapter 8](Ch8.html) (This is almost entirely based on [this document](https://mc-stan.org/users/documentation/case-studies/model-based_causal_inference_for_RCT.html#analyzing-the-example-data-with-stan) by Lee, Feller, and Rabe-Hesketh. All the errors are my own.)

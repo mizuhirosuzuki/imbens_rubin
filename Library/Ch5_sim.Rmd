@@ -329,6 +329,7 @@ bind_rows(
   xlab(TeX("$\\tau$")) +
   ylab(TeX("Power")) +
   theme_minimal()
+
   
 ```
 

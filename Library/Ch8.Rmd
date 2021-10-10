@@ -23,13 +23,18 @@ packages <- c(
   "scales",
   "haven",
   "kableExtra",
-  "magrittr"
+  "magrittr",
+  "rstan"
 )
 
 # Change to install = TRUE to install the required packages
 pacman::p_load(packages, character.only = TRUE)
 
 ```
+
+The stan files used in this document are almost entirely based on the codes written by Lee, Feller, and Rabe-Hesketh.
+Their original code is found [here](https://github.com/joonho112/Bayesian-causal-inference).
+Their documentation on this code is found [here](https://mc-stan.org/users/documentation/case-studies/model-based_causal_inference_for_RCT.html#analyzing-the-example-data-with-stan).
 
 ```{r}
 
@@ -115,5 +120,229 @@ df %>%
   theme_minimal()
 ```
 
-df %>% head(6)
+## Model 1
+
+```{r, eval = FALSE}
+
+stan_data <- list(N = nrow(df), y = df$earn78, w = df$treat)
+
+# Compile and run the stan model
+fit_mod1 <- stan(
+  file = "stan_files/Ch8_Model_01.stan",
+  data = stan_data,
+  iter = 1000, chains = 4
+  )
+
+```
+
+## Model 2
+
+```{r}
+
+stan_data <- list(N = nrow(df), y = df$earn78, w = df$treat)
+
+# Compile and run the stan model
+fit_mod2 <- stan(
+  file = "stan_files/Ch8_Model_02.stan",
+  data = stan_data,
+  iter = 1000, chains = 4
+  )
+
+```
+
+## Model 3
+
+```{r}
+
+# Add nine mean-centered covariates and their interaction terms 
+x <- as.matrix(df %>% select(age, education, married, nodegree, black, earn74, earn74_0, earn75, earn75_0))
+x_mean_mat <- matrix(rep(apply(x, 2, mean, na.rm = TRUE), each = nrow(x)), nrow = nrow(x))
+x_c_mat <- x - x_mean_mat 
+xw_inter <- x_c_mat * df$treat
+colnames(xw_inter) <-  paste0(colnames(x), "_w")
+
+# Collect data into a list format suitable for Stan
+stan_data <- list(
+  N = nrow(df), 
+  N_cov = ncol(x_c_mat),
+  y = df$earn78, 
+  w = df$treat,
+  x = x_c_mat,
+  xw_inter = xw_inter
+  )
+
+# Compile and run the stan model
+fit_mod3 <- stan(
+  file = "stan_files/Ch8_Model_03.stan",
+  data = stan_data,
+  iter = 1000, chains = 4
+  )
+
+```
+
+## Model 4
+
+```{r}
+
+# Add nine mean-centered covariates and their interaction terms 
+x <- as.matrix(
+  df %>% 
+    select(age, education, married, nodegree, black, earn74, earn74_0, earn75, earn75_0) %>% 
+    mutate(
+      earn74_0 = (earn74 > 0),
+      earn75_0 = (earn75 > 0),
+    )
+    )
+x_mean_mat <- matrix(rep(apply(x, 2, mean, na.rm = TRUE), each = nrow(x)), nrow = nrow(x))
+x_c_mat <- x - x_mean_mat 
+xw_inter <- x_c_mat * df$treat
+colnames(xw_inter) <-  paste0(colnames(x), "_w")
+
+# Collect data into a list format suitable for Stan
+stan_data <- list(
+  N = nrow(df), 
+  N_cov = ncol(x_c_mat),
+  y = df$earn78, 
+  y_pos = as.numeric(df$earn78 > 0),
+  z = df$treat,
+  x = x_c_mat,
+  xz_inter = xw_inter,
+  # x = x,
+  # xz_inter = x * df$treat,
+  rho = 0
+  )
+
+# Compile and run the stan model
+fit_mod4 <- stan(
+  file = "stan_files/Ch8_Model_04.stan",
+  data = stan_data,
+  iter = 1000, chains = 4
+  )
+
+```
+
+```{r, eval = FALSE, echo = FALSE}
+saveRDS(fit_mod1, "rds/Ch8/fit_mod1.Rds")
+saveRDS(fit_mod2, "rds/Ch8/fit_mod2.Rds")
+saveRDS(fit_mod3, "rds/Ch8/fit_mod3.Rds")
+saveRDS(fit_mod4, "rds/Ch8/fit_mod4.Rds")
+```
+
+```{r, echo = FALSE}
+fit_mod1 <- readRDS("rds/Ch8/fit_mod1.Rds")
+fit_mod2 <- readRDS("rds/Ch8/fit_mod2.Rds")
+fit_mod3 <- readRDS("rds/Ch8/fit_mod3.Rds")
+fit_mod4 <- readRDS("rds/Ch8/fit_mod4.Rds")
+```
+
+## Table 8.6
+
+```{r}
+param <- c("tau_fs", "tau_qte25", "tau_qte50", "tau_qte75" )
+
+cbind(
+  c("No", "No", "Yes", "Yes"),
+  c("No", "Yes", "Yes", "Yes"),
+  c("No", "Yes", "Yes", "Yes"),
+  c("No", "No", "No", "Yes"),
+  map(
+    list(fit_mod1, fit_mod2, fit_mod3, fit_mod4),
+    function(fit_mod) {
+      fit_mod_summary <- summary(fit_mod)$summary[param, c("mean", "sd")]
+      fit_mod_summary <- cbind(
+        formatC(fit_mod_summary[,1], digits = 2, format = "f"),
+        paste0("(", formatC(fit_mod_summary[,2], digits = 2, format = "f"), ")")
+      )
+      return(map(seq(nrow(fit_mod_summary)), ~ fit_mod_summary[.,] %>% as.vector) %>% unlist())
+    }
+  ) %>% 
+    bind_cols %>% 
+    t()
+  ) %>% 
+  set_rownames(NULL) %>% 
+  kable("html", booktabs = TRUE, align = c("l", rep("c", 11))) %>% 
+  add_header_above(
+    c(
+      "Mean\nCovariate\nDependent", "Variance\nTreatment\nSpecific", 
+      "Potential\nOutcome\nIndependent", "Two-\nPart\nModel",
+      rep(c("Mean", "(S.D.)"), 4)
+    )
+  ) %>% 
+  add_header_above(
+    c(" ", " ", " ", " ", 
+      "Mean Effect" = 2, "0.25 quant" = 2, "0.50 quant" = 2, "0.75 quant" = 2
+      )
+  ) %>% 
+  add_header_above(
+    c(
+      " ", " ", " ", " ", " ", " ",
+      "Effects on Quantiles" = 6
+    )
+  ) %>% 
+  kable_styling(position = "center")
+
+```
+
+## Table 8.7
+
+```{r}
+
+summary(fit_mod4)$summary %>% rownames
+
+param1 <- c("alpha_cont", paste0("beta_cont[", seq(1,9), "]"))
+param2 <- c("tau_cont", paste0("beta_inter_cont[", seq(1,9), "]"))
+param3 <- c("alpha_bin", paste0("beta_bin[", seq(1,9), "]"))
+param4 <- c("tau_bin", paste0("beta_inter_bin[", seq(1,9), "]"))
+
+
+cbind(
+  c(
+    "intercept", "age", "education", "married",
+    "nodegree", "black", "earn '74", "earn '74 $>$ 0",
+    "earn '75", "earn '75 $>$ 0"
+  ),
+  map(
+    list(param1, param2, param3, param4),
+    function(param) {
+      fit_mod_summary <- summary(fit_mod4)$summary[param, c("mean", "sd")]
+      fit_mod_summary <- cbind(
+        formatC(fit_mod_summary[,1], digits = 2, format = "f"),
+        paste0("(", formatC(fit_mod_summary[,2], digits = 2, format = "f"), ")")
+      )
+    } %>% 
+      as_tibble()
+  ) %>% 
+    bind_cols %>% 
+    as.matrix()
+  ) %>% 
+  rbind(
+    c(
+      "ln($\\sigma_c$)", 
+      summary(fit_mod4)$summary["log_sigma_c", c("mean")] %>% formatC(digits = 3, format = "f"),
+      paste0("(", summary(fit_mod4)$summary["log_sigma_c", c("sd")] %>% formatC(digits = 3, format = "f"), ")"),
+      rep(" ", 6)
+      ),
+    c(
+      "ln($\\sigma_t$)", 
+      summary(fit_mod4)$summary["log_sigma_t", c("mean")] %>% formatC(digits = 3, format = "f"),
+      paste0("(", summary(fit_mod4)$summary["log_sigma_t", c("sd")] %>% formatC(digits = 3, format = "f"), ")"),
+      rep(" ", 6)
+      )
+  ) %>% 
+  set_colnames(NULL) %>% 
+  kable("html", booktabs = TRUE, align = c("l", rep("c", 8))) %>% 
+  add_header_above(
+    c(" ", rep(c("Mean", "(S.D.)"), 4))
+  ) %>% 
+  add_header_above(
+    c("Covariate", "$\\beta_c$" = 2, "$\\beta_t - \\beta_c$" = 2, "$\\gamma_0$" = 2, "$\\gamma_1 - \\gamma_0$" = 2)
+  ) %>% 
+  kable_styling(position = "center")
+
+  
+```
+
+
+
+
 

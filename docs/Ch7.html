@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Chapter 7</title>
+
+<script src="site_libs/header-attrs-2.10/header-attrs.js"></script>
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Imbens-Rubin textbook replication codes</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="https://github.com/mizuhirosuzuki/imbens_rubin">GitHub</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Chapter 7</h1>
+<h4 class="author"></h4>
+
+</div>
+
+
+<pre class="r"><code># Install and load packages ---------------
+packages &lt;- c(
+  &quot;tidyverse&quot;,
+  &quot;ggrepel&quot;,
+  &quot;WDI&quot;,
+  &quot;modelsummary&quot;,
+  &quot;forcats&quot;,
+  &quot;grid&quot;,
+  &quot;gridExtra&quot;,
+  &quot;countrycode&quot;,
+  &quot;lmtest&quot;,
+  &quot;sandwich&quot;,
+  &quot;scales&quot;,
+  &quot;haven&quot;,
+  &quot;kableExtra&quot;,
+  &quot;magrittr&quot;
+)
+
+# Change to install = TRUE to install the required packages
+pacman::p_load(packages, character.only = TRUE)</code></pre>
+<pre class="r"><code>df &lt;- read_dta(&quot;../data/HISP materials/evaluation.dta&quot;) 
+
+df_analysis &lt;- df %&gt;% 
+  filter(eligible == 1) %&gt;% 
+  filter(round %in% c(0, 1)) %&gt;% 
+  group_by(locality_identifier, treatment_locality, round) %&gt;% 
+  summarise_at(vars(health_expenditures), mean) %&gt;% 
+  pivot_wider(names_from = round, values_from = health_expenditures) %&gt;% 
+  rename(
+    pre_health_exp = `0`,
+    post_health_exp = `1`,
+  ) %&gt;% 
+  ungroup()</code></pre>
+<div id="summary-statistics" class="section level2">
+<h2>Summary Statistics</h2>
+<pre class="r"><code>cbind(
+  c(
+    &quot;Pre-treatment health exp.&quot;,
+    &quot;Post-treatment health exp.&quot;
+  ),
+  df_analysis %&gt;% 
+    group_by(treatment_locality) %&gt;% 
+    summarise_at(vars(pre_health_exp, post_health_exp), list(mean, sd)) %&gt;% 
+    pivot_longer(
+      cols = -treatment_locality,
+      names_to = c(&quot;.value&quot;, &quot;func&quot;),
+      names_pattern = &quot;(.*)(_fn\\d)&quot;
+      ) %&gt;%
+    mutate(
+      across(
+        c(pre_health_exp, post_health_exp),
+        ~ ifelse(
+          func == &quot;_fn1&quot;,
+          formatC(., digits = 2, format = &quot;f&quot;),
+          paste0(&quot;(&quot;, formatC(., digits = 2, format = &quot;f&quot;), &quot;)&quot;)
+          )
+        ),
+      ) %&gt;% 
+    select(- c(treatment_locality, func)) %&gt;% 
+    t(),
+  df_analysis %&gt;% 
+    summarise_at(vars(pre_health_exp, post_health_exp), list(min, max)) %&gt;% 
+      pivot_longer(
+        cols = everything(),
+        names_to = c(&quot;.value&quot;, &quot;func&quot;),
+        names_pattern = &quot;(.*)(_fn\\d)&quot;
+        ) %&gt;%
+    mutate(
+      across(
+        c(pre_health_exp, post_health_exp),
+        ~ formatC(., digits = 2, format = &quot;f&quot;),
+        ),
+      ) %&gt;% 
+    select(- c(func)) %&gt;% 
+    t()
+  ) %&gt;% 
+  set_rownames(NULL) %&gt;% 
+  kable(&quot;html&quot;, booktabs = TRUE, align = c(&quot;l&quot;, rep(&quot;c&quot;, 6))) %&gt;% 
+  add_header_above(
+    c(&quot; &quot;, &quot;Average&quot;, &quot;Sample (S.D.)&quot;, &quot;Average&quot;, &quot;Sample (S.D.)&quot;, &quot;Min&quot;, &quot;Max&quot;)
+  ) %&gt;% 
+  add_header_above(
+    c(&quot;Variable&quot;, &quot;Control ($N_c$ = 99)&quot; = 2, &quot;Treatment ($N_t$ = 98)&quot; = 2, &quot; &quot;, &quot; &quot;)
+  ) %&gt;% 
+  kable_styling(position = &quot;center&quot;)</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Variable
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Control (<span class="math inline">\(N_c\)</span> = 99)
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Treatment (<span class="math inline">\(N_t\)</span> = 98)
+</div>
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+</tr>
+<tr>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Average
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Sample (S.D.)
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Average
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Sample (S.D.)
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Min
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Max
+</div>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Pre-treatment health exp.
+</td>
+<td style="text-align:center;">
+14.93
+</td>
+<td style="text-align:center;">
+(2.14)
+</td>
+<td style="text-align:center;">
+14.49
+</td>
+<td style="text-align:center;">
+(1.86)
+</td>
+<td style="text-align:center;">
+8.27
+</td>
+<td style="text-align:center;">
+25.49
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Post-treatment health exp.
+</td>
+<td style="text-align:center;">
+18.40
+</td>
+<td style="text-align:center;">
+(3.21)
+</td>
+<td style="text-align:center;">
+7.92
+</td>
+<td style="text-align:center;">
+(2.95)
+</td>
+<td style="text-align:center;">
+0.04
+</td>
+<td style="text-align:center;">
+27.63
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="regression-estimates-for-average-treatment-effects" class="section level2">
+<h2>Regression estimates for average treatment effects</h2>
+<pre class="r"><code>df_analysis</code></pre>
+<pre><code>## # A tibble: 197 × 4
+##    locality_identifier treatment_locality pre_health_exp post_health_exp
+##                  &lt;dbl&gt;              &lt;dbl&gt;          &lt;dbl&gt;           &lt;dbl&gt;
+##  1                   2                  0           14.6           17.9 
+##  2                   3                  1           13.6           10.1 
+##  3                   4                  0           14.7           17.6 
+##  4                   5                  1           14.0            7.63
+##  5                   6                  0           13.9           15.2 
+##  6                   7                  1           16.1            9.23
+##  7                   9                  1           14.8            8.65
+##  8                  10                  0           16.2           24.3 
+##  9                  11                  1           14.4            8.65
+## 10                  12                  0           16.0           16.7 
+## # … with 187 more rows</code></pre>
+<pre class="r"><code>res1 &lt;- lm(post_health_exp ~ treatment_locality, df_analysis)
+res2 &lt;- lm(post_health_exp ~ treatment_locality + pre_health_exp, df_analysis)
+res3 &lt;- lm(
+  post_health_exp ~ treatment_locality + pre_health_exp + treatment_locality:(demean_covar), 
+  df_analysis %&gt;% 
+    mutate(
+      demean_covar = pre_health_exp - mean(pre_health_exp)
+      )
+  )
+
+bind_cols(
+  c(&quot;No covariates&quot;, &quot;Pre-treatment var&quot;, &quot;Pre-treatment var interacted with $W$&quot;),
+  map(
+    list(res1, res2, res3),
+    function(x) x %&gt;% summary %&gt;% coefficients %&gt;% .[&quot;treatment_locality&quot;, c(&quot;Estimate&quot;, &quot;Std. Error&quot;)]
+    ) %&gt;% 
+    bind_rows() 
+  ) %&gt;% 
+  mutate(
+    Estimate = formatC(Estimate, digits = 2, format = &quot;f&quot;),
+    `Std. Error` = paste0(&quot;(&quot;, formatC(`Std. Error`, digits = 2, format = &quot;f&quot;), &quot;)&quot;)
+  ) %&gt;% 
+  as.matrix() %&gt;% 
+  set_colnames(NULL) %&gt;% 
+  kable(&quot;html&quot;, booktabs = TRUE, align = c(&quot;l&quot;, rep(&quot;c&quot;, 2))) %&gt;% 
+  add_header_above(
+    c(&quot; &quot;, &quot;Estimate&quot;, &quot;($\\widehat{\\text{s.e.}}$)&quot;)
+  ) %&gt;% 
+  add_header_above(
+    c(&quot;Covariates&quot;, &quot;EFfect of assginment to treatment on post health expenditures&quot; = 2)
+  ) %&gt;% 
+  kable_styling(position = &quot;center&quot;)</code></pre>
+<pre><code>## New names:
+## * NA -&gt; ...1</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Covariates
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+EFfect of assginment to treatment on post health expenditures
+</div>
+</th>
+</tr>
+<tr>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Estimate
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(<span class="math inline">\(\widehat{\text{s.e.}}\)</span>)
+</div>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+No covariates
+</td>
+<td style="text-align:center;">
+-10.48
+</td>
+<td style="text-align:center;">
+(0.44)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Pre-treatment var
+</td>
+<td style="text-align:center;">
+-10.29
+</td>
+<td style="text-align:center;">
+(0.42)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Pre-treatment var interacted with <span class="math inline">\(W\)</span>
+</td>
+<td style="text-align:center;">
+-10.28
+</td>
+<td style="text-align:center;">
+(0.42)
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="regression-estimates-for-average-treatment-effects-1" class="section level2">
+<h2>Regression estimates for average treatment effects</h2>
+<pre class="r"><code>res1 &lt;- lm(
+  post_health_exp ~ treatment_locality + pre_health_exp + treatment_locality:(demean_covar), 
+  df_analysis %&gt;% 
+    mutate(
+      demean_covar = pre_health_exp - mean(pre_health_exp)
+      )
+  )
+res2 &lt;- lm(
+  log(post_health_exp) ~ treatment_locality + pre_health_exp + treatment_locality:(demean_covar), 
+  df_analysis %&gt;% 
+    mutate(
+      demean_covar = pre_health_exp - mean(pre_health_exp)
+      )
+  )
+
+
+
+bind_cols(
+  c(&quot;Assignment&quot;, &quot;Intercept&quot;, &quot;Pre-treatment var.&quot;, &quot;Pre-traetment var. $\\times$ Assignment&quot;),
+  map(
+    list(res1, res2),
+    function(x)  x %&gt;% 
+      summary %&gt;% 
+      coefficients %&gt;% 
+      .[, c(&quot;Estimate&quot;, &quot;Std. Error&quot;)] %&gt;% 
+      .[c(2,1,3,4),] %&gt;% 
+      as_tibble()
+    )
+  ) %&gt;% 
+  mutate(
+    across(
+      c(Estimate...2, Estimate...4),
+      ~ formatC(., digits = 2, format = &quot;f&quot;),
+    ),
+    across(
+      c(&quot;Std. Error...3&quot;, &quot;Std. Error...5&quot;),
+      ~ paste0(&quot;(&quot;, formatC(., digits = 2, format = &quot;f&quot;), &quot;)&quot;)
+    )
+  ) %&gt;% 
+  as.matrix() %&gt;% 
+  rbind(
+    c(
+      &quot;R-squared&quot;,
+      res1 %&gt;% summary %&gt;% .$r.squared %&gt;% format(digits = 2, format = &quot;f&quot;),
+      &quot; &quot;,
+      res2 %&gt;% summary %&gt;% .$r.squared %&gt;% format(digits = 2, format = &quot;f&quot;),
+      &quot; &quot;
+    )
+  ) %&gt;% 
+  set_colnames(NULL) %&gt;% 
+  kable(&quot;html&quot;, booktabs = TRUE, align = c(&quot;l&quot;, rep(&quot;c&quot;, 4))) %&gt;% 
+  add_header_above(
+    c(&quot; &quot;, rep(c(&quot;Est&quot;, &quot;($\\widehat{\\text{s.e.}}$)&quot;), 2))
+  ) %&gt;% 
+  add_header_above(
+    c(&quot;Covariates&quot;, &quot;Model for Levels&quot; = 2, &quot;Model for Logs&quot; = 2)
+  ) %&gt;% 
+  kable_styling(position = &quot;center&quot;)</code></pre>
+<pre><code>## New names:
+## * NA -&gt; ...1
+## * Estimate -&gt; Estimate...2
+## * `Std. Error` -&gt; `Std. Error...3`
+## * Estimate -&gt; Estimate...4
+## * `Std. Error` -&gt; `Std. Error...5`</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Covariates
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Model for Levels
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Model for Logs
+</div>
+</th>
+</tr>
+<tr>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Est
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(<span class="math inline">\(\widehat{\text{s.e.}}\)</span>)
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Est
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(<span class="math inline">\(\widehat{\text{s.e.}}\)</span>)
+</div>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Assignment
+</td>
+<td style="text-align:center;">
+-10.28
+</td>
+<td style="text-align:center;">
+(0.42)
+</td>
+<td style="text-align:center;">
+-0.90
+</td>
+<td style="text-align:center;">
+(0.06)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Intercept
+</td>
+<td style="text-align:center;">
+13.92
+</td>
+<td style="text-align:center;">
+(2.10)
+</td>
+<td style="text-align:center;">
+2.65
+</td>
+<td style="text-align:center;">
+(0.31)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Pre-treatment var.
+</td>
+<td style="text-align:center;">
+0.30
+</td>
+<td style="text-align:center;">
+(0.14)
+</td>
+<td style="text-align:center;">
+0.02
+</td>
+<td style="text-align:center;">
+(0.02)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Pre-traetment var. <span class="math inline">\(\times\)</span> Assignment
+</td>
+<td style="text-align:center;">
+0.34
+</td>
+<td style="text-align:center;">
+(0.21)
+</td>
+<td style="text-align:center;">
+0.14
+</td>
+<td style="text-align:center;">
+(0.03)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+R-squared
+</td>
+<td style="text-align:center;">
+0.77
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+0.59
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="p-values-for-tests-for-constant-and-zero-treatment-effects" class="section level2">
+<h2><span class="math inline">\(p\)</span>-values for tests for constant and zero treatment effects</h2>
+<pre class="r"><code>res &lt;- lm(
+  post_health_exp ~ treatment_locality + pre_health_exp + treatment_locality:(demean_covar), 
+  df_analysis %&gt;% 
+    mutate(
+      demean_covar = pre_health_exp - mean(pre_health_exp)
+      )
+  )
+
+# Zero treatment effect
+coef &lt;- res %&gt;% summary %&gt;% coefficients %&gt;% .[c(&quot;treatment_locality&quot;, &quot;treatment_locality:demean_covar&quot;), &quot;Estimate&quot;]
+varcov &lt;- vcov(res)[
+  c(&quot;treatment_locality&quot;, &quot;treatment_locality:demean_covar&quot;),
+  c(&quot;treatment_locality&quot;, &quot;treatment_locality:demean_covar&quot;)
+  ]
+
+chi2_test_zero &lt;- 1 - pchisq(
+  coef %*% solve(varcov) %*% coef,
+  df = 2
+) 
+
+# Fisher&#39;s exact test
+
+set.seed(123)
+treatment_perm &lt;-  map(
+  seq(1, 10000),
+  ~ sample(nrow(df_analysis), nrow(df_analysis %&gt;% filter(treatment_locality == 1)), replace = FALSE)
+  ) %&gt;% 
+  bind_cols() %&gt;% 
+  as.matrix()</code></pre>
+<pre><code>## New names:
+## * NA -&gt; ...1
+## * NA -&gt; ...2
+## * NA -&gt; ...3
+## * NA -&gt; ...4
+## * NA -&gt; ...5
+## * ...</code></pre>
+<pre class="r"><code>get_perm_res &lt;- function(df_analysis, treatment_perm, tau) {
+  
+  df_tmp &lt;- df_analysis %&gt;% 
+    mutate(
+      Y1 = post_health_exp * (treatment_locality == 1) + (post_health_exp + tau) * (treatment_locality == 0),
+      Y0 = post_health_exp * (treatment_locality == 0) + (post_health_exp - tau) * (treatment_locality == 1),
+      )
+  
+  output &lt;- map_dbl(
+    seq(ncol(treatment_perm)),
+    ~ abs(
+      mean((df_tmp %&gt;% pull(Y1))[treatment_perm[, .]]) - 
+        mean((df_tmp %&gt;% pull(Y0))[-treatment_perm[, .]]) - tau
+    )
+  )
+  
+  return(output)
+}
+
+perm_test_res &lt;- get_perm_res(df_analysis, treatment_perm %&gt;% as.matrix, 0)
+
+df_tmp &lt;- df_analysis %&gt;% 
+  mutate(
+    Y1 = post_health_exp * (treatment_locality == 1) + (post_health_exp + tau) * (treatment_locality == 0),
+    Y0 = post_health_exp * (treatment_locality == 0) + (post_health_exp - tau) * (treatment_locality == 1),
+    )
+
+actual_diff &lt;- abs(
+  mean((df_tmp %&gt;% filter(treatment_locality == 1) %&gt;%  pull(Y1))) - 
+    mean((df_tmp %&gt;% filter(treatment_locality == 0) %&gt;% pull(Y0)))
+  )
+
+# ggplot() +
+#   geom_histogram(aes(x = perm_test_res), binwidth = 0.01) +
+#   geom_vline(xintercept = quantile(perm_test_res, .90), linetype = 5) +
+#   geom_vline(xintercept = quantile(perm_test_res, .95), linetype = 4) +
+#   geom_vline(xintercept = quantile(perm_test_res, .99), linetype = 3) +
+#   geom_vline(xintercept = actual_diff, color = &quot;red&quot;) +
+#   theme(
+#     panel.background = element_blank(),
+#     panel.grid.major = element_blank(),
+#     panel.grid.minor = element_blank(),
+#     axis.line = element_line(colour = &quot;black&quot;)
+#     )
+   
+fisher_test &lt;- mean(perm_test_res &gt; actual_diff)
+
+# Constant treatment effect
+
+coef &lt;- res %&gt;% summary %&gt;% coefficients %&gt;% .[&quot;treatment_locality:demean_covar&quot;, &quot;Estimate&quot;]
+varcov &lt;- vcov(res)[&quot;treatment_locality:demean_covar&quot;, &quot;treatment_locality:demean_covar&quot;]
+
+chi2_test_const &lt;- 1 - pchisq(
+  coef %*% solve(varcov) %*% coef,
+  df = 1
+) 
+
+cbind(
+  c(&quot;$\\chi^2(2)$ approximation&quot;, &quot;Fisher exact $p$-value&quot;, &quot;$\\chi^2(1)$ approximation&quot;),
+  c(
+    formatC(chi2_test_zero, digits = 3, format = &quot;f&quot;), 
+    formatC(fisher_test, digits = 3, format = &quot;f&quot;),
+    formatC(chi2_test_const, digits = 3, format = &quot;f&quot;)
+    )
+  ) %&gt;% 
+  kable(&quot;html&quot;, booktabs = TRUE, align = c(&quot;l&quot;, rep(&quot;c&quot;, 1))) %&gt;% 
+  add_header_above(
+    c(&quot; &quot;, &quot;Post health exp.&quot;)
+  ) %&gt;% 
+  kable_styling(position = &quot;center&quot;) %&gt;% 
+  pack_rows(&quot;Zero treatment effect&quot;, 1, 2) %&gt;%
+  pack_rows(&quot;Constant treatment effect&quot;, 3, 3)</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Post health exp.
+</div>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr grouplength="2">
+<td colspan="2" style="border-bottom: 1px solid;">
+<strong>Zero treatment effect</strong>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
+<span class="math inline">\(\chi^2(2)\)</span> approximation
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
+Fisher exact <span class="math inline">\(p\)</span>-value
+</td>
+<td style="text-align:center;">
+0.000
+</td>
+</tr>
+<tr grouplength="1">
+<td colspan="2" style="border-bottom: 1px solid;">
+<strong>Constant treatment effect</strong>
+</td>
+</tr>
+<tr>
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
+<span class="math inline">\(\chi^2(1)\)</span> approximation
+</td>
+<td style="text-align:center;">
+0.105
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

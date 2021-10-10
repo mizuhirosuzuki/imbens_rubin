@@ -1,0 +1,329 @@
+---
+title: "Chapter 7"
+author: ""
+date: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning = FALSE, results = "hide"}
+# Install and load packages ---------------
+packages <- c(
+  "tidyverse",
+  "ggrepel",
+  "WDI",
+  "modelsummary",
+  "forcats",
+  "grid",
+  "gridExtra",
+  "countrycode",
+  "lmtest",
+  "sandwich",
+  "scales",
+  "haven",
+  "kableExtra",
+  "magrittr"
+)
+
+# Change to install = TRUE to install the required packages
+pacman::p_load(packages, character.only = TRUE)
+
+```
+
+```{r}
+
+df <- read_dta("../data/HISP materials/evaluation.dta") 
+
+df_analysis <- df %>% 
+  filter(eligible == 1) %>% 
+  filter(round %in% c(0, 1)) %>% 
+  group_by(locality_identifier, treatment_locality, round) %>% 
+  summarise_at(vars(health_expenditures), mean) %>% 
+  pivot_wider(names_from = round, values_from = health_expenditures) %>% 
+  rename(
+    pre_health_exp = `0`,
+    post_health_exp = `1`,
+  ) %>% 
+  ungroup()
+  
+```
+
+## Summary Statistics
+
+```{r}
+
+cbind(
+  c(
+    "Pre-treatment health exp.",
+    "Post-treatment health exp."
+  ),
+  df_analysis %>% 
+    group_by(treatment_locality) %>% 
+    summarise_at(vars(pre_health_exp, post_health_exp), list(mean, sd)) %>% 
+    pivot_longer(
+      cols = -treatment_locality,
+      names_to = c(".value", "func"),
+      names_pattern = "(.*)(_fn\\d)"
+      ) %>%
+    mutate(
+      across(
+        c(pre_health_exp, post_health_exp),
+        ~ ifelse(
+          func == "_fn1",
+          formatC(., digits = 2, format = "f"),
+          paste0("(", formatC(., digits = 2, format = "f"), ")")
+          )
+        ),
+      ) %>% 
+    select(- c(treatment_locality, func)) %>% 
+    t(),
+  df_analysis %>% 
+    summarise_at(vars(pre_health_exp, post_health_exp), list(min, max)) %>% 
+      pivot_longer(
+        cols = everything(),
+        names_to = c(".value", "func"),
+        names_pattern = "(.*)(_fn\\d)"
+        ) %>%
+    mutate(
+      across(
+        c(pre_health_exp, post_health_exp),
+        ~ formatC(., digits = 2, format = "f"),
+        ),
+      ) %>% 
+    select(- c(func)) %>% 
+    t()
+  ) %>% 
+  set_rownames(NULL) %>% 
+  kable("html", booktabs = TRUE, align = c("l", rep("c", 6))) %>% 
+  add_header_above(
+    c(" ", "Average", "Sample (S.D.)", "Average", "Sample (S.D.)", "Min", "Max")
+  ) %>% 
+  add_header_above(
+    c("Variable", "Control ($N_c$ = 99)" = 2, "Treatment ($N_t$ = 98)" = 2, " ", " ")
+  ) %>% 
+  kable_styling(position = "center")
+
+```
+
+## Regression estimates for average treatment effects
+
+```{r}
+
+df_analysis
+
+res1 <- lm(post_health_exp ~ treatment_locality, df_analysis)
+res2 <- lm(post_health_exp ~ treatment_locality + pre_health_exp, df_analysis)
+res3 <- lm(
+  post_health_exp ~ treatment_locality + pre_health_exp + treatment_locality:(demean_covar), 
+  df_analysis %>% 
+    mutate(
+      demean_covar = pre_health_exp - mean(pre_health_exp)
+      )
+  )
+
+bind_cols(
+  c("No covariates", "Pre-treatment var", "Pre-treatment var interacted with $W$"),
+  map(
+    list(res1, res2, res3),
+    function(x) x %>% summary %>% coefficients %>% .["treatment_locality", c("Estimate", "Std. Error")]
+    ) %>% 
+    bind_rows() 
+  ) %>% 
+  mutate(
+    Estimate = formatC(Estimate, digits = 2, format = "f"),
+    `Std. Error` = paste0("(", formatC(`Std. Error`, digits = 2, format = "f"), ")")
+  ) %>% 
+  as.matrix() %>% 
+  set_colnames(NULL) %>% 
+  kable("html", booktabs = TRUE, align = c("l", rep("c", 2))) %>% 
+  add_header_above(
+    c(" ", "Estimate", "($\\widehat{\\text{s.e.}}$)")
+  ) %>% 
+  add_header_above(
+    c("Covariates", "EFfect of assginment to treatment on post health expenditures" = 2)
+  ) %>% 
+  kable_styling(position = "center")
+
+```
+
+## Regression estimates for average treatment effects
+
+```{r}
+
+res1 <- lm(
+  post_health_exp ~ treatment_locality + pre_health_exp + treatment_locality:(demean_covar), 
+  df_analysis %>% 
+    mutate(
+      demean_covar = pre_health_exp - mean(pre_health_exp)
+      )
+  )
+res2 <- lm(
+  log(post_health_exp) ~ treatment_locality + pre_health_exp + treatment_locality:(demean_covar), 
+  df_analysis %>% 
+    mutate(
+      demean_covar = pre_health_exp - mean(pre_health_exp)
+      )
+  )
+
+
+
+bind_cols(
+  c("Assignment", "Intercept", "Pre-treatment var.", "Pre-traetment var. $\\times$ Assignment"),
+  map(
+    list(res1, res2),
+    function(x)  x %>% 
+      summary %>% 
+      coefficients %>% 
+      .[, c("Estimate", "Std. Error")] %>% 
+      .[c(2,1,3,4),] %>% 
+      as_tibble()
+    )
+  ) %>% 
+  mutate(
+    across(
+      c(Estimate...2, Estimate...4),
+      ~ formatC(., digits = 2, format = "f"),
+    ),
+    across(
+      c("Std. Error...3", "Std. Error...5"),
+      ~ paste0("(", formatC(., digits = 2, format = "f"), ")")
+    )
+  ) %>% 
+  as.matrix() %>% 
+  rbind(
+    c(
+      "R-squared",
+      res1 %>% summary %>% .$r.squared %>% format(digits = 2, format = "f"),
+      " ",
+      res2 %>% summary %>% .$r.squared %>% format(digits = 2, format = "f"),
+      " "
+    )
+  ) %>% 
+  set_colnames(NULL) %>% 
+  kable("html", booktabs = TRUE, align = c("l", rep("c", 4))) %>% 
+  add_header_above(
+    c(" ", rep(c("Est", "($\\widehat{\\text{s.e.}}$)"), 2))
+  ) %>% 
+  add_header_above(
+    c("Covariates", "Model for Levels" = 2, "Model for Logs" = 2)
+  ) %>% 
+  kable_styling(position = "center")
+
+```
+
+## $p$-values for tests for constant and zero treatment effects
+
+```{r}
+
+res <- lm(
+  post_health_exp ~ treatment_locality + pre_health_exp + treatment_locality:(demean_covar), 
+  df_analysis %>% 
+    mutate(
+      demean_covar = pre_health_exp - mean(pre_health_exp)
+      )
+  )
+
+# Zero treatment effect
+coef <- res %>% summary %>% coefficients %>% .[c("treatment_locality", "treatment_locality:demean_covar"), "Estimate"]
+varcov <- vcov(res)[
+  c("treatment_locality", "treatment_locality:demean_covar"),
+  c("treatment_locality", "treatment_locality:demean_covar")
+  ]
+
+chi2_test_zero <- 1 - pchisq(
+  coef %*% solve(varcov) %*% coef,
+  df = 2
+) 
+
+# Fisher's exact test
+
+set.seed(123)
+treatment_perm <-  map(
+  seq(1, 10000),
+  ~ sample(nrow(df_analysis), nrow(df_analysis %>% filter(treatment_locality == 1)), replace = FALSE)
+  ) %>% 
+  bind_cols() %>% 
+  as.matrix()
+
+get_perm_res <- function(df_analysis, treatment_perm, tau) {
+  
+  df_tmp <- df_analysis %>% 
+    mutate(
+      Y1 = post_health_exp * (treatment_locality == 1) + (post_health_exp + tau) * (treatment_locality == 0),
+      Y0 = post_health_exp * (treatment_locality == 0) + (post_health_exp - tau) * (treatment_locality == 1),
+      )
+  
+  output <- map_dbl(
+    seq(ncol(treatment_perm)),
+    ~ abs(
+      mean((df_tmp %>% pull(Y1))[treatment_perm[, .]]) - 
+        mean((df_tmp %>% pull(Y0))[-treatment_perm[, .]]) - tau
+    )
+  )
+  
+  return(output)
+}
+
+perm_test_res <- get_perm_res(df_analysis, treatment_perm %>% as.matrix, 0)
+
+df_tmp <- df_analysis %>% 
+  mutate(
+    Y1 = post_health_exp * (treatment_locality == 1) + (post_health_exp + tau) * (treatment_locality == 0),
+    Y0 = post_health_exp * (treatment_locality == 0) + (post_health_exp - tau) * (treatment_locality == 1),
+    )
+
+actual_diff <- abs(
+  mean((df_tmp %>% filter(treatment_locality == 1) %>%  pull(Y1))) - 
+    mean((df_tmp %>% filter(treatment_locality == 0) %>% pull(Y0)))
+  )
+
+# ggplot() +
+#   geom_histogram(aes(x = perm_test_res), binwidth = 0.01) +
+#   geom_vline(xintercept = quantile(perm_test_res, .90), linetype = 5) +
+#   geom_vline(xintercept = quantile(perm_test_res, .95), linetype = 4) +
+#   geom_vline(xintercept = quantile(perm_test_res, .99), linetype = 3) +
+#   geom_vline(xintercept = actual_diff, color = "red") +
+#   theme(
+#     panel.background = element_blank(),
+#     panel.grid.major = element_blank(),
+#     panel.grid.minor = element_blank(),
+#     axis.line = element_line(colour = "black")
+#     )
+   
+fisher_test <- mean(perm_test_res > actual_diff)
+
+# Constant treatment effect
+
+coef <- res %>% summary %>% coefficients %>% .["treatment_locality:demean_covar", "Estimate"]
+varcov <- vcov(res)["treatment_locality:demean_covar", "treatment_locality:demean_covar"]
+
+chi2_test_const <- 1 - pchisq(
+  coef %*% solve(varcov) %*% coef,
+  df = 1
+) 
+
+cbind(
+  c("$\\chi^2(2)$ approximation", "Fisher exact $p$-value", "$\\chi^2(1)$ approximation"),
+  c(
+    formatC(chi2_test_zero, digits = 3, format = "f"), 
+    formatC(fisher_test, digits = 3, format = "f"),
+    formatC(chi2_test_const, digits = 3, format = "f")
+    )
+  ) %>% 
+  kable("html", booktabs = TRUE, align = c("l", rep("c", 1))) %>% 
+  add_header_above(
+    c(" ", "Post health exp.")
+  ) %>% 
+  kable_styling(position = "center") %>% 
+  pack_rows("Zero treatment effect", 1, 2) %>%
+  pack_rows("Constant treatment effect", 3, 3)
+
+
+```
+
+
+
+
+

@@ -281,11 +281,13 @@ packages &lt;- c(
   &quot;scales&quot;,
   &quot;haven&quot;,
   &quot;kableExtra&quot;,
-  &quot;magrittr&quot;
+  &quot;magrittr&quot;,
+  &quot;rstan&quot;
 )
 
 # Change to install = TRUE to install the required packages
 pacman::p_load(packages, character.only = TRUE)</code></pre>
+<p>The stan files used in this document are almost entirely based on the codes written by Lee, Feller, and Rabe-Hesketh. Their original code is found <a href="https://github.com/joonho112/Bayesian-causal-inference">here</a>. Their documentation on this code is found <a href="https://mc-stan.org/users/documentation/case-studies/model-based_causal_inference_for_RCT.html#analyzing-the-example-data-with-stan">here</a>.</p>
 <pre class="r"><code>df &lt;- read_dta(&quot;http://www.nber.org/~rdehejia/data/nsw_dw.dta&quot;) %&gt;% 
   mutate(
     earn74 = re74 / 1000,
@@ -597,7 +599,1303 @@ earn’78 = 0
   ylim(c(0, 0.5)) +
   theme_minimal()</code></pre>
 <p><img src="Ch8_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
-<p>df %&gt;% head(6)</p>
+<div id="model-1" class="section level2">
+<h2>Model 1</h2>
+<pre class="r"><code>stan_data &lt;- list(N = nrow(df), y = df$earn78, w = df$treat)
+
+# Compile and run the stan model
+fit_mod1 &lt;- stan(
+  file = &quot;stan_files/Ch8_Model_01.stan&quot;,
+  data = stan_data,
+  iter = 1000, chains = 4
+  )</code></pre>
+</div>
+<div id="model-2" class="section level2">
+<h2>Model 2</h2>
+<pre class="r"><code>stan_data &lt;- list(N = nrow(df), y = df$earn78, w = df$treat)
+
+# Compile and run the stan model
+fit_mod2 &lt;- stan(
+  file = &quot;stan_files/Ch8_Model_02.stan&quot;,
+  data = stan_data,
+  iter = 1000, chains = 4
+  )</code></pre>
+<pre><code>## When you compile models, you are also contributing to development of the NEXT
+## Stan compiler. In this version of rstan, we compile your model as usual, but
+## also test our new compiler on your syntactically correct model. In this case,
+## the new compiler did not work like we hoped. By filing an issue at
+## https://github.com/stan-dev/stanc3/issues with your model
+## or a minimal example that shows this warning you will be contributing
+## valuable information to Stan and ensuring your models continue working. Thank you!
+## This message can be avoided by wrapping your function call inside suppressMessages()
+##  or by first calling rstan_options(javascript = FALSE).
+## Semantic error in &#39;string&#39;, line 5, column 7 to column 15: 
+## Identifier &#39;quantile&#39; clashes with Stan Math library function.</code></pre>
+<pre><code>## 
+## SAMPLING FOR MODEL &#39;Ch8_Model_02&#39; NOW (CHAIN 1).
+## Chain 1: 
+## Chain 1: Gradient evaluation took 7.1e-05 seconds
+## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.71 seconds.
+## Chain 1: Adjust your expectations accordingly!
+## Chain 1: 
+## Chain 1: 
+## Chain 1: Iteration:   1 / 1000 [  0%]  (Warmup)
+## Chain 1: Iteration: 100 / 1000 [ 10%]  (Warmup)
+## Chain 1: Iteration: 200 / 1000 [ 20%]  (Warmup)
+## Chain 1: Iteration: 300 / 1000 [ 30%]  (Warmup)
+## Chain 1: Iteration: 400 / 1000 [ 40%]  (Warmup)
+## Chain 1: Iteration: 500 / 1000 [ 50%]  (Warmup)
+## Chain 1: Iteration: 501 / 1000 [ 50%]  (Sampling)
+## Chain 1: Iteration: 600 / 1000 [ 60%]  (Sampling)
+## Chain 1: Iteration: 700 / 1000 [ 70%]  (Sampling)
+## Chain 1: Iteration: 800 / 1000 [ 80%]  (Sampling)
+## Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
+## Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
+## Chain 1: 
+## Chain 1:  Elapsed Time: 0.231515 seconds (Warm-up)
+## Chain 1:                0.169078 seconds (Sampling)
+## Chain 1:                0.400593 seconds (Total)
+## Chain 1: 
+## 
+## SAMPLING FOR MODEL &#39;Ch8_Model_02&#39; NOW (CHAIN 2).
+## Chain 2: 
+## Chain 2: Gradient evaluation took 3.9e-05 seconds
+## Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.39 seconds.
+## Chain 2: Adjust your expectations accordingly!
+## Chain 2: 
+## Chain 2: 
+## Chain 2: Iteration:   1 / 1000 [  0%]  (Warmup)
+## Chain 2: Iteration: 100 / 1000 [ 10%]  (Warmup)
+## Chain 2: Iteration: 200 / 1000 [ 20%]  (Warmup)
+## Chain 2: Iteration: 300 / 1000 [ 30%]  (Warmup)
+## Chain 2: Iteration: 400 / 1000 [ 40%]  (Warmup)
+## Chain 2: Iteration: 500 / 1000 [ 50%]  (Warmup)
+## Chain 2: Iteration: 501 / 1000 [ 50%]  (Sampling)
+## Chain 2: Iteration: 600 / 1000 [ 60%]  (Sampling)
+## Chain 2: Iteration: 700 / 1000 [ 70%]  (Sampling)
+## Chain 2: Iteration: 800 / 1000 [ 80%]  (Sampling)
+## Chain 2: Iteration: 900 / 1000 [ 90%]  (Sampling)
+## Chain 2: Iteration: 1000 / 1000 [100%]  (Sampling)
+## Chain 2: 
+## Chain 2:  Elapsed Time: 0.222419 seconds (Warm-up)
+## Chain 2:                0.178699 seconds (Sampling)
+## Chain 2:                0.401118 seconds (Total)
+## Chain 2: 
+## 
+## SAMPLING FOR MODEL &#39;Ch8_Model_02&#39; NOW (CHAIN 3).
+## Chain 3: 
+## Chain 3: Gradient evaluation took 3.6e-05 seconds
+## Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.36 seconds.
+## Chain 3: Adjust your expectations accordingly!
+## Chain 3: 
+## Chain 3: 
+## Chain 3: Iteration:   1 / 1000 [  0%]  (Warmup)
+## Chain 3: Iteration: 100 / 1000 [ 10%]  (Warmup)
+## Chain 3: Iteration: 200 / 1000 [ 20%]  (Warmup)
+## Chain 3: Iteration: 300 / 1000 [ 30%]  (Warmup)
+## Chain 3: Iteration: 400 / 1000 [ 40%]  (Warmup)
+## Chain 3: Iteration: 500 / 1000 [ 50%]  (Warmup)
+## Chain 3: Iteration: 501 / 1000 [ 50%]  (Sampling)
+## Chain 3: Iteration: 600 / 1000 [ 60%]  (Sampling)
+## Chain 3: Iteration: 700 / 1000 [ 70%]  (Sampling)
+## Chain 3: Iteration: 800 / 1000 [ 80%]  (Sampling)
+## Chain 3: Iteration: 900 / 1000 [ 90%]  (Sampling)
+## Chain 3: Iteration: 1000 / 1000 [100%]  (Sampling)
+## Chain 3: 
+## Chain 3:  Elapsed Time: 0.21897 seconds (Warm-up)
+## Chain 3:                0.167248 seconds (Sampling)
+## Chain 3:                0.386218 seconds (Total)
+## Chain 3: 
+## 
+## SAMPLING FOR MODEL &#39;Ch8_Model_02&#39; NOW (CHAIN 4).
+## Chain 4: 
+## Chain 4: Gradient evaluation took 3.5e-05 seconds
+## Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.35 seconds.
+## Chain 4: Adjust your expectations accordingly!
+## Chain 4: 
+## Chain 4: 
+## Chain 4: Iteration:   1 / 1000 [  0%]  (Warmup)
+## Chain 4: Iteration: 100 / 1000 [ 10%]  (Warmup)
+## Chain 4: Iteration: 200 / 1000 [ 20%]  (Warmup)
+## Chain 4: Iteration: 300 / 1000 [ 30%]  (Warmup)
+## Chain 4: Iteration: 400 / 1000 [ 40%]  (Warmup)
+## Chain 4: Iteration: 500 / 1000 [ 50%]  (Warmup)
+## Chain 4: Iteration: 501 / 1000 [ 50%]  (Sampling)
+## Chain 4: Iteration: 600 / 1000 [ 60%]  (Sampling)
+## Chain 4: Iteration: 700 / 1000 [ 70%]  (Sampling)
+## Chain 4: Iteration: 800 / 1000 [ 80%]  (Sampling)
+## Chain 4: Iteration: 900 / 1000 [ 90%]  (Sampling)
+## Chain 4: Iteration: 1000 / 1000 [100%]  (Sampling)
+## Chain 4: 
+## Chain 4:  Elapsed Time: 0.218884 seconds (Warm-up)
+## Chain 4:                0.179702 seconds (Sampling)
+## Chain 4:                0.398586 seconds (Total)
+## Chain 4:</code></pre>
+</div>
+<div id="model-3" class="section level2">
+<h2>Model 3</h2>
+<pre class="r"><code># Add nine mean-centered covariates and their interaction terms 
+x &lt;- as.matrix(df %&gt;% select(age, education, married, nodegree, black, earn74, earn74_0, earn75, earn75_0))
+x_mean_mat &lt;- matrix(rep(apply(x, 2, mean, na.rm = TRUE), each = nrow(x)), nrow = nrow(x))
+x_c_mat &lt;- x - x_mean_mat 
+xw_inter &lt;- x_c_mat * df$treat
+colnames(xw_inter) &lt;-  paste0(colnames(x), &quot;_w&quot;)
+
+# Collect data into a list format suitable for Stan
+stan_data &lt;- list(
+  N = nrow(df), 
+  N_cov = ncol(x_c_mat),
+  y = df$earn78, 
+  w = df$treat,
+  x = x_c_mat,
+  xw_inter = xw_inter
+  )
+
+# Compile and run the stan model
+fit_mod3 &lt;- stan(
+  file = &quot;stan_files/Ch8_Model_03.stan&quot;,
+  data = stan_data,
+  iter = 1000, chains = 4
+  )</code></pre>
+<pre><code>## When you compile models, you are also contributing to development of the NEXT
+## Stan compiler. In this version of rstan, we compile your model as usual, but
+## also test our new compiler on your syntactically correct model. In this case,
+## the new compiler did not work like we hoped. By filing an issue at
+## https://github.com/stan-dev/stanc3/issues with your model
+## or a minimal example that shows this warning you will be contributing
+## valuable information to Stan and ensuring your models continue working. Thank you!
+## This message can be avoided by wrapping your function call inside suppressMessages()
+##  or by first calling rstan_options(javascript = FALSE).
+## Semantic error in &#39;string&#39;, line 5, column 7 to column 15: 
+## Identifier &#39;quantile&#39; clashes with Stan Math library function.</code></pre>
+<pre><code>## 
+## SAMPLING FOR MODEL &#39;Ch8_Model_03&#39; NOW (CHAIN 1).
+## Chain 1: 
+## Chain 1: Gradient evaluation took 0.000156 seconds
+## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.56 seconds.
+## Chain 1: Adjust your expectations accordingly!
+## Chain 1: 
+## Chain 1: 
+## Chain 1: Iteration:   1 / 1000 [  0%]  (Warmup)
+## Chain 1: Iteration: 100 / 1000 [ 10%]  (Warmup)
+## Chain 1: Iteration: 200 / 1000 [ 20%]  (Warmup)
+## Chain 1: Iteration: 300 / 1000 [ 30%]  (Warmup)
+## Chain 1: Iteration: 400 / 1000 [ 40%]  (Warmup)
+## Chain 1: Iteration: 500 / 1000 [ 50%]  (Warmup)
+## Chain 1: Iteration: 501 / 1000 [ 50%]  (Sampling)
+## Chain 1: Iteration: 600 / 1000 [ 60%]  (Sampling)
+## Chain 1: Iteration: 700 / 1000 [ 70%]  (Sampling)
+## Chain 1: Iteration: 800 / 1000 [ 80%]  (Sampling)
+## Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
+## Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
+## Chain 1: 
+## Chain 1:  Elapsed Time: 1.5093 seconds (Warm-up)
+## Chain 1:                0.625582 seconds (Sampling)
+## Chain 1:                2.13488 seconds (Total)
+## Chain 1: 
+## 
+## SAMPLING FOR MODEL &#39;Ch8_Model_03&#39; NOW (CHAIN 2).
+## Chain 2: 
+## Chain 2: Gradient evaluation took 6.6e-05 seconds
+## Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.66 seconds.
+## Chain 2: Adjust your expectations accordingly!
+## Chain 2: 
+## Chain 2: 
+## Chain 2: Iteration:   1 / 1000 [  0%]  (Warmup)
+## Chain 2: Iteration: 100 / 1000 [ 10%]  (Warmup)
+## Chain 2: Iteration: 200 / 1000 [ 20%]  (Warmup)
+## Chain 2: Iteration: 300 / 1000 [ 30%]  (Warmup)
+## Chain 2: Iteration: 400 / 1000 [ 40%]  (Warmup)
+## Chain 2: Iteration: 500 / 1000 [ 50%]  (Warmup)
+## Chain 2: Iteration: 501 / 1000 [ 50%]  (Sampling)
+## Chain 2: Iteration: 600 / 1000 [ 60%]  (Sampling)
+## Chain 2: Iteration: 700 / 1000 [ 70%]  (Sampling)
+## Chain 2: Iteration: 800 / 1000 [ 80%]  (Sampling)
+## Chain 2: Iteration: 900 / 1000 [ 90%]  (Sampling)
+## Chain 2: Iteration: 1000 / 1000 [100%]  (Sampling)
+## Chain 2: 
+## Chain 2:  Elapsed Time: 1.48241 seconds (Warm-up)
+## Chain 2:                0.707962 seconds (Sampling)
+## Chain 2:                2.19037 seconds (Total)
+## Chain 2: 
+## 
+## SAMPLING FOR MODEL &#39;Ch8_Model_03&#39; NOW (CHAIN 3).
+## Chain 3: 
+## Chain 3: Gradient evaluation took 6.5e-05 seconds
+## Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.65 seconds.
+## Chain 3: Adjust your expectations accordingly!
+## Chain 3: 
+## Chain 3: 
+## Chain 3: Iteration:   1 / 1000 [  0%]  (Warmup)
+## Chain 3: Iteration: 100 / 1000 [ 10%]  (Warmup)
+## Chain 3: Iteration: 200 / 1000 [ 20%]  (Warmup)
+## Chain 3: Iteration: 300 / 1000 [ 30%]  (Warmup)
+## Chain 3: Iteration: 400 / 1000 [ 40%]  (Warmup)
+## Chain 3: Iteration: 500 / 1000 [ 50%]  (Warmup)
+## Chain 3: Iteration: 501 / 1000 [ 50%]  (Sampling)
+## Chain 3: Iteration: 600 / 1000 [ 60%]  (Sampling)
+## Chain 3: Iteration: 700 / 1000 [ 70%]  (Sampling)
+## Chain 3: Iteration: 800 / 1000 [ 80%]  (Sampling)
+## Chain 3: Iteration: 900 / 1000 [ 90%]  (Sampling)
+## Chain 3: Iteration: 1000 / 1000 [100%]  (Sampling)
+## Chain 3: 
+## Chain 3:  Elapsed Time: 1.52593 seconds (Warm-up)
+## Chain 3:                0.603981 seconds (Sampling)
+## Chain 3:                2.12991 seconds (Total)
+## Chain 3: 
+## 
+## SAMPLING FOR MODEL &#39;Ch8_Model_03&#39; NOW (CHAIN 4).
+## Chain 4: 
+## Chain 4: Gradient evaluation took 6e-05 seconds
+## Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.6 seconds.
+## Chain 4: Adjust your expectations accordingly!
+## Chain 4: 
+## Chain 4: 
+## Chain 4: Iteration:   1 / 1000 [  0%]  (Warmup)
+## Chain 4: Iteration: 100 / 1000 [ 10%]  (Warmup)
+## Chain 4: Iteration: 200 / 1000 [ 20%]  (Warmup)
+## Chain 4: Iteration: 300 / 1000 [ 30%]  (Warmup)
+## Chain 4: Iteration: 400 / 1000 [ 40%]  (Warmup)
+## Chain 4: Iteration: 500 / 1000 [ 50%]  (Warmup)
+## Chain 4: Iteration: 501 / 1000 [ 50%]  (Sampling)
+## Chain 4: Iteration: 600 / 1000 [ 60%]  (Sampling)
+## Chain 4: Iteration: 700 / 1000 [ 70%]  (Sampling)
+## Chain 4: Iteration: 800 / 1000 [ 80%]  (Sampling)
+## Chain 4: Iteration: 900 / 1000 [ 90%]  (Sampling)
+## Chain 4: Iteration: 1000 / 1000 [100%]  (Sampling)
+## Chain 4: 
+## Chain 4:  Elapsed Time: 1.5719 seconds (Warm-up)
+## Chain 4:                0.583757 seconds (Sampling)
+## Chain 4:                2.15565 seconds (Total)
+## Chain 4:</code></pre>
+</div>
+<div id="model-4" class="section level2">
+<h2>Model 4</h2>
+<pre class="r"><code># Add nine mean-centered covariates and their interaction terms 
+x &lt;- as.matrix(
+  df %&gt;% 
+    select(age, education, married, nodegree, black, earn74, earn74_0, earn75, earn75_0) %&gt;% 
+    mutate(
+      earn74_0 = (earn74 &gt; 0),
+      earn75_0 = (earn75 &gt; 0),
+    )
+    )
+x_mean_mat &lt;- matrix(rep(apply(x, 2, mean, na.rm = TRUE), each = nrow(x)), nrow = nrow(x))
+x_c_mat &lt;- x - x_mean_mat 
+xw_inter &lt;- x_c_mat * df$treat
+colnames(xw_inter) &lt;-  paste0(colnames(x), &quot;_w&quot;)
+
+# Collect data into a list format suitable for Stan
+stan_data &lt;- list(
+  N = nrow(df), 
+  N_cov = ncol(x_c_mat),
+  y = df$earn78, 
+  y_pos = as.numeric(df$earn78 &gt; 0),
+  z = df$treat,
+  x = x_c_mat,
+  xz_inter = xw_inter,
+  # x = x,
+  # xz_inter = x * df$treat,
+  rho = 0
+  )
+
+# Compile and run the stan model
+fit_mod4 &lt;- stan(
+  file = &quot;stan_files/Ch8_Model_04.stan&quot;,
+  data = stan_data,
+  iter = 1000, chains = 4
+  )</code></pre>
+<pre><code>## When you compile models, you are also contributing to development of the NEXT
+## Stan compiler. In this version of rstan, we compile your model as usual, but
+## also test our new compiler on your syntactically correct model. In this case,
+## the new compiler did not work like we hoped. By filing an issue at
+## https://github.com/stan-dev/stanc3/issues with your model
+## or a minimal example that shows this warning you will be contributing
+## valuable information to Stan and ensuring your models continue working. Thank you!
+## This message can be avoided by wrapping your function call inside suppressMessages()
+##  or by first calling rstan_options(javascript = FALSE).
+## Semantic error in &#39;string&#39;, line 2, column 7 to column 15: 
+## Identifier &#39;quantile&#39; clashes with Stan Math library function.</code></pre>
+<pre><code>## 
+## SAMPLING FOR MODEL &#39;Ch8_Model_04&#39; NOW (CHAIN 1).
+## Chain 1: Rejecting initial value:
+## Chain 1:   Error evaluating the log probability at the initial value.
+## Chain 1: Exception: lognormal_lpdf: Scale parameter is -1.90969, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 1: Rejecting initial value:
+## Chain 1:   Error evaluating the log probability at the initial value.
+## Chain 1: Exception: lognormal_lpdf: Scale parameter is -0.494532, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 1: Rejecting initial value:
+## Chain 1:   Error evaluating the log probability at the initial value.
+## Chain 1: Exception: lognormal_lpdf: Scale parameter is -0.72984, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 1: Rejecting initial value:
+## Chain 1:   Error evaluating the log probability at the initial value.
+## Chain 1: Exception: lognormal_lpdf: Scale parameter is -0.360274, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 1: Rejecting initial value:
+## Chain 1:   Error evaluating the log probability at the initial value.
+## Chain 1: Exception: lognormal_lpdf: Scale parameter is -0.26098, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 1: Rejecting initial value:
+## Chain 1:   Error evaluating the log probability at the initial value.
+## Chain 1: Exception: lognormal_lpdf: Scale parameter is -0.678968, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 1: Rejecting initial value:
+## Chain 1:   Error evaluating the log probability at the initial value.
+## Chain 1: Exception: lognormal_lpdf: Scale parameter is -0.877445, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 1: Rejecting initial value:
+## Chain 1:   Error evaluating the log probability at the initial value.
+## Chain 1: Exception: lognormal_lpdf: Scale parameter is -1.93821, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 1: Rejecting initial value:
+## Chain 1:   Error evaluating the log probability at the initial value.
+## Chain 1: Exception: lognormal_lpdf: Scale parameter is -0.00674907, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 1: Rejecting initial value:
+## Chain 1:   Error evaluating the log probability at the initial value.
+## Chain 1: Exception: lognormal_lpdf: Scale parameter is -1.00088, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 1: 
+## Chain 1: Gradient evaluation took 0.000309 seconds
+## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.09 seconds.
+## Chain 1: Adjust your expectations accordingly!
+## Chain 1: 
+## Chain 1: 
+## Chain 1: Iteration:   1 / 1000 [  0%]  (Warmup)
+## Chain 1: Iteration: 100 / 1000 [ 10%]  (Warmup)
+## Chain 1: Iteration: 200 / 1000 [ 20%]  (Warmup)
+## Chain 1: Iteration: 300 / 1000 [ 30%]  (Warmup)
+## Chain 1: Iteration: 400 / 1000 [ 40%]  (Warmup)
+## Chain 1: Iteration: 500 / 1000 [ 50%]  (Warmup)
+## Chain 1: Iteration: 501 / 1000 [ 50%]  (Sampling)
+## Chain 1: Iteration: 600 / 1000 [ 60%]  (Sampling)
+## Chain 1: Iteration: 700 / 1000 [ 70%]  (Sampling)
+## Chain 1: Iteration: 800 / 1000 [ 80%]  (Sampling)
+## Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
+## Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
+## Chain 1: 
+## Chain 1:  Elapsed Time: 9.02484 seconds (Warm-up)
+## Chain 1:                3.19613 seconds (Sampling)
+## Chain 1:                12.221 seconds (Total)
+## Chain 1: 
+## 
+## SAMPLING FOR MODEL &#39;Ch8_Model_04&#39; NOW (CHAIN 2).
+## Chain 2: Rejecting initial value:
+## Chain 2:   Error evaluating the log probability at the initial value.
+## Chain 2: Exception: lognormal_lpdf: Scale parameter is -0.0542545, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 2: Rejecting initial value:
+## Chain 2:   Error evaluating the log probability at the initial value.
+## Chain 2: Exception: lognormal_lpdf: Scale parameter is -0.269141, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 2: Rejecting initial value:
+## Chain 2:   Error evaluating the log probability at the initial value.
+## Chain 2: Exception: lognormal_lpdf: Scale parameter is -1.19248, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 2: Rejecting initial value:
+## Chain 2:   Error evaluating the log probability at the initial value.
+## Chain 2: Exception: lognormal_lpdf: Scale parameter is -1.18821, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 2: Rejecting initial value:
+## Chain 2:   Error evaluating the log probability at the initial value.
+## Chain 2: Exception: lognormal_lpdf: Scale parameter is -1.32215, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 2: 
+## Chain 2: Gradient evaluation took 0.0002 seconds
+## Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 2 seconds.
+## Chain 2: Adjust your expectations accordingly!
+## Chain 2: 
+## Chain 2: 
+## Chain 2: Iteration:   1 / 1000 [  0%]  (Warmup)
+## Chain 2: Iteration: 100 / 1000 [ 10%]  (Warmup)
+## Chain 2: Iteration: 200 / 1000 [ 20%]  (Warmup)
+## Chain 2: Iteration: 300 / 1000 [ 30%]  (Warmup)
+## Chain 2: Iteration: 400 / 1000 [ 40%]  (Warmup)
+## Chain 2: Iteration: 500 / 1000 [ 50%]  (Warmup)
+## Chain 2: Iteration: 501 / 1000 [ 50%]  (Sampling)
+## Chain 2: Iteration: 600 / 1000 [ 60%]  (Sampling)
+## Chain 2: Iteration: 700 / 1000 [ 70%]  (Sampling)
+## Chain 2: Iteration: 800 / 1000 [ 80%]  (Sampling)
+## Chain 2: Iteration: 900 / 1000 [ 90%]  (Sampling)
+## Chain 2: Iteration: 1000 / 1000 [100%]  (Sampling)
+## Chain 2: 
+## Chain 2:  Elapsed Time: 8.27101 seconds (Warm-up)
+## Chain 2:                2.94859 seconds (Sampling)
+## Chain 2:                11.2196 seconds (Total)
+## Chain 2: 
+## 
+## SAMPLING FOR MODEL &#39;Ch8_Model_04&#39; NOW (CHAIN 3).
+## Chain 3: 
+## Chain 3: Gradient evaluation took 0.000197 seconds
+## Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 1.97 seconds.
+## Chain 3: Adjust your expectations accordingly!
+## Chain 3: 
+## Chain 3: 
+## Chain 3: Iteration:   1 / 1000 [  0%]  (Warmup)
+## Chain 3: Iteration: 100 / 1000 [ 10%]  (Warmup)
+## Chain 3: Iteration: 200 / 1000 [ 20%]  (Warmup)
+## Chain 3: Iteration: 300 / 1000 [ 30%]  (Warmup)
+## Chain 3: Iteration: 400 / 1000 [ 40%]  (Warmup)
+## Chain 3: Iteration: 500 / 1000 [ 50%]  (Warmup)
+## Chain 3: Iteration: 501 / 1000 [ 50%]  (Sampling)
+## Chain 3: Iteration: 600 / 1000 [ 60%]  (Sampling)
+## Chain 3: Iteration: 700 / 1000 [ 70%]  (Sampling)
+## Chain 3: Iteration: 800 / 1000 [ 80%]  (Sampling)
+## Chain 3: Iteration: 900 / 1000 [ 90%]  (Sampling)
+## Chain 3: Iteration: 1000 / 1000 [100%]  (Sampling)
+## Chain 3: 
+## Chain 3:  Elapsed Time: 7.75415 seconds (Warm-up)
+## Chain 3:                2.80312 seconds (Sampling)
+## Chain 3:                10.5573 seconds (Total)
+## Chain 3: 
+## 
+## SAMPLING FOR MODEL &#39;Ch8_Model_04&#39; NOW (CHAIN 4).
+## Chain 4: Rejecting initial value:
+## Chain 4:   Error evaluating the log probability at the initial value.
+## Chain 4: Exception: lognormal_lpdf: Scale parameter is -1.52753, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 4: Rejecting initial value:
+## Chain 4:   Error evaluating the log probability at the initial value.
+## Chain 4: Exception: lognormal_lpdf: Scale parameter is -0.500182, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 4: Rejecting initial value:
+## Chain 4:   Error evaluating the log probability at the initial value.
+## Chain 4: Exception: lognormal_lpdf: Scale parameter is -0.0603489, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 4: Rejecting initial value:
+## Chain 4:   Error evaluating the log probability at the initial value.
+## Chain 4: Exception: lognormal_lpdf: Scale parameter is -1.84628, but must be &gt; 0!  (in &#39;modelc8e2427df18_Ch8_Model_04&#39; at line 78)
+## 
+## Chain 4: 
+## Chain 4: Gradient evaluation took 0.000195 seconds
+## Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 1.95 seconds.
+## Chain 4: Adjust your expectations accordingly!
+## Chain 4: 
+## Chain 4: 
+## Chain 4: Iteration:   1 / 1000 [  0%]  (Warmup)
+## Chain 4: Iteration: 100 / 1000 [ 10%]  (Warmup)
+## Chain 4: Iteration: 200 / 1000 [ 20%]  (Warmup)
+## Chain 4: Iteration: 300 / 1000 [ 30%]  (Warmup)
+## Chain 4: Iteration: 400 / 1000 [ 40%]  (Warmup)
+## Chain 4: Iteration: 500 / 1000 [ 50%]  (Warmup)
+## Chain 4: Iteration: 501 / 1000 [ 50%]  (Sampling)
+## Chain 4: Iteration: 600 / 1000 [ 60%]  (Sampling)
+## Chain 4: Iteration: 700 / 1000 [ 70%]  (Sampling)
+## Chain 4: Iteration: 800 / 1000 [ 80%]  (Sampling)
+## Chain 4: Iteration: 900 / 1000 [ 90%]  (Sampling)
+## Chain 4: Iteration: 1000 / 1000 [100%]  (Sampling)
+## Chain 4: 
+## Chain 4:  Elapsed Time: 8.54278 seconds (Warm-up)
+## Chain 4:                2.96939 seconds (Sampling)
+## Chain 4:                11.5122 seconds (Total)
+## Chain 4:</code></pre>
+</div>
+<div id="table-8.6" class="section level2">
+<h2>Table 8.6</h2>
+<pre class="r"><code>param &lt;- c(&quot;tau_fs&quot;, &quot;tau_qte25&quot;, &quot;tau_qte50&quot;, &quot;tau_qte75&quot; )
+
+cbind(
+  c(&quot;No&quot;, &quot;No&quot;, &quot;Yes&quot;, &quot;Yes&quot;),
+  c(&quot;No&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;),
+  c(&quot;No&quot;, &quot;Yes&quot;, &quot;Yes&quot;, &quot;Yes&quot;),
+  c(&quot;No&quot;, &quot;No&quot;, &quot;No&quot;, &quot;Yes&quot;),
+  map(
+    list(fit_mod1, fit_mod2, fit_mod3, fit_mod4),
+    function(fit_mod) {
+      fit_mod_summary &lt;- summary(fit_mod)$summary[param, c(&quot;mean&quot;, &quot;sd&quot;)]
+      fit_mod_summary &lt;- cbind(
+        formatC(fit_mod_summary[,1], digits = 2, format = &quot;f&quot;),
+        paste0(&quot;(&quot;, formatC(fit_mod_summary[,2], digits = 2, format = &quot;f&quot;), &quot;)&quot;)
+      )
+      return(map(seq(nrow(fit_mod_summary)), ~ fit_mod_summary[.,] %&gt;% as.vector) %&gt;% unlist())
+    }
+  ) %&gt;% 
+    bind_cols %&gt;% 
+    t()
+  ) %&gt;% 
+  set_rownames(NULL) %&gt;% 
+  kable(&quot;html&quot;, booktabs = TRUE, align = c(&quot;l&quot;, rep(&quot;c&quot;, 11))) %&gt;% 
+  add_header_above(
+    c(
+      &quot;Mean\nCovariate\nDependent&quot;, &quot;Variance\nTreatment\nSpecific&quot;, 
+      &quot;Potential\nOutcome\nIndependent&quot;, &quot;Two-\nPart\nModel&quot;,
+      rep(c(&quot;Mean&quot;, &quot;(S.D.)&quot;), 4)
+    )
+  ) %&gt;% 
+  add_header_above(
+    c(&quot; &quot;, &quot; &quot;, &quot; &quot;, &quot; &quot;, 
+      &quot;Mean Effect&quot; = 2, &quot;0.25 quant&quot; = 2, &quot;0.50 quant&quot; = 2, &quot;0.75 quant&quot; = 2
+      )
+  ) %&gt;% 
+  add_header_above(
+    c(
+      &quot; &quot;, &quot; &quot;, &quot; &quot;, &quot; &quot;, &quot; &quot;, &quot; &quot;,
+      &quot;Effects on Quantiles&quot; = 6
+    )
+  ) %&gt;% 
+  kable_styling(position = &quot;center&quot;)</code></pre>
+<pre><code>## New names:
+## * NA -&gt; ...1
+## * NA -&gt; ...2
+## * NA -&gt; ...3
+## * NA -&gt; ...4</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="6">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Effects on Quantiles
+</div>
+</th>
+</tr>
+<tr>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Mean Effect
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+0.25 quant
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+0.50 quant
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+0.75 quant
+</div>
+</th>
+</tr>
+<tr>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Mean<br>Covariate<br>Dependent
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Variance<br>Treatment<br>Specific
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Potential<br>Outcome<br>Independent
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Two-<br>Part<br>Model
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Mean
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(S.D.)
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Mean
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(S.D.)
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Mean
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(S.D.)
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Mean
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(S.D.)
+</div>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+No
+</td>
+<td style="text-align:center;">
+No
+</td>
+<td style="text-align:center;">
+No
+</td>
+<td style="text-align:center;">
+No
+</td>
+<td style="text-align:center;">
+1.80
+</td>
+<td style="text-align:center;">
+(0.64)
+</td>
+<td style="text-align:center;">
+1.80
+</td>
+<td style="text-align:center;">
+(0.64)
+</td>
+<td style="text-align:center;">
+1.80
+</td>
+<td style="text-align:center;">
+(0.64)
+</td>
+<td style="text-align:center;">
+1.80
+</td>
+<td style="text-align:center;">
+(0.64)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+No
+</td>
+<td style="text-align:center;">
+Yes
+</td>
+<td style="text-align:center;">
+Yes
+</td>
+<td style="text-align:center;">
+No
+</td>
+<td style="text-align:center;">
+1.79
+</td>
+<td style="text-align:center;">
+(0.49)
+</td>
+<td style="text-align:center;">
+0.63
+</td>
+<td style="text-align:center;">
+(0.35)
+</td>
+<td style="text-align:center;">
+1.65
+</td>
+<td style="text-align:center;">
+(0.56)
+</td>
+<td style="text-align:center;">
+3.10
+</td>
+<td style="text-align:center;">
+(0.63)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Yes
+</td>
+<td style="text-align:center;">
+Yes
+</td>
+<td style="text-align:center;">
+Yes
+</td>
+<td style="text-align:center;">
+No
+</td>
+<td style="text-align:center;">
+1.56
+</td>
+<td style="text-align:center;">
+(0.51)
+</td>
+<td style="text-align:center;">
+0.42
+</td>
+<td style="text-align:center;">
+(0.34)
+</td>
+<td style="text-align:center;">
+1.39
+</td>
+<td style="text-align:center;">
+(0.56)
+</td>
+<td style="text-align:center;">
+2.88
+</td>
+<td style="text-align:center;">
+(0.64)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Yes
+</td>
+<td style="text-align:center;">
+Yes
+</td>
+<td style="text-align:center;">
+Yes
+</td>
+<td style="text-align:center;">
+Yes
+</td>
+<td style="text-align:center;">
+1.82
+</td>
+<td style="text-align:center;">
+(0.88)
+</td>
+<td style="text-align:center;">
+0.23
+</td>
+<td style="text-align:center;">
+(0.29)
+</td>
+<td style="text-align:center;">
+1.01
+</td>
+<td style="text-align:center;">
+(0.54)
+</td>
+<td style="text-align:center;">
+1.81
+</td>
+<td style="text-align:center;">
+(0.75)
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="table-8.7" class="section level2">
+<h2>Table 8.7</h2>
+<pre class="r"><code>summary(fit_mod4)$summary %&gt;% rownames</code></pre>
+<pre><code>##  [1] &quot;alpha_bin&quot;          &quot;beta_bin[1]&quot;        &quot;beta_bin[2]&quot;        &quot;beta_bin[3]&quot;        &quot;beta_bin[4]&quot;       
+##  [6] &quot;beta_bin[5]&quot;        &quot;beta_bin[6]&quot;        &quot;beta_bin[7]&quot;        &quot;beta_bin[8]&quot;        &quot;beta_bin[9]&quot;       
+## [11] &quot;beta_inter_bin[1]&quot;  &quot;beta_inter_bin[2]&quot;  &quot;beta_inter_bin[3]&quot;  &quot;beta_inter_bin[4]&quot;  &quot;beta_inter_bin[5]&quot; 
+## [16] &quot;beta_inter_bin[6]&quot;  &quot;beta_inter_bin[7]&quot;  &quot;beta_inter_bin[8]&quot;  &quot;beta_inter_bin[9]&quot;  &quot;tau_bin&quot;           
+## [21] &quot;alpha_cont&quot;         &quot;beta_cont[1]&quot;       &quot;beta_cont[2]&quot;       &quot;beta_cont[3]&quot;       &quot;beta_cont[4]&quot;      
+## [26] &quot;beta_cont[5]&quot;       &quot;beta_cont[6]&quot;       &quot;beta_cont[7]&quot;       &quot;beta_cont[8]&quot;       &quot;beta_cont[9]&quot;      
+## [31] &quot;beta_inter_cont[1]&quot; &quot;beta_inter_cont[2]&quot; &quot;beta_inter_cont[3]&quot; &quot;beta_inter_cont[4]&quot; &quot;beta_inter_cont[5]&quot;
+## [36] &quot;beta_inter_cont[6]&quot; &quot;beta_inter_cont[7]&quot; &quot;beta_inter_cont[8]&quot; &quot;beta_inter_cont[9]&quot; &quot;tau_cont&quot;          
+## [41] &quot;sigma_t&quot;            &quot;sigma_c&quot;            &quot;y0_bar&quot;             &quot;y1_bar&quot;             &quot;tau_fs&quot;            
+## [46] &quot;log_sigma_c&quot;        &quot;log_sigma_t&quot;        &quot;tau_qte25&quot;          &quot;tau_qte50&quot;          &quot;tau_qte75&quot;         
+## [51] &quot;lp__&quot;</code></pre>
+<pre class="r"><code>param1 &lt;- c(&quot;alpha_cont&quot;, paste0(&quot;beta_cont[&quot;, seq(1,9), &quot;]&quot;))
+param2 &lt;- c(&quot;tau_cont&quot;, paste0(&quot;beta_inter_cont[&quot;, seq(1,9), &quot;]&quot;))
+param3 &lt;- c(&quot;alpha_bin&quot;, paste0(&quot;beta_bin[&quot;, seq(1,9), &quot;]&quot;))
+param4 &lt;- c(&quot;tau_bin&quot;, paste0(&quot;beta_inter_bin[&quot;, seq(1,9), &quot;]&quot;))
+
+
+cbind(
+  c(
+    &quot;intercept&quot;, &quot;age&quot;, &quot;education&quot;, &quot;married&quot;,
+    &quot;nodegree&quot;, &quot;black&quot;, &quot;earn &#39;74&quot;, &quot;earn &#39;74 $&gt;$ 0&quot;,
+    &quot;earn &#39;75&quot;, &quot;earn &#39;75 $&gt;$ 0&quot;
+  ),
+  map(
+    list(param1, param2, param3, param4),
+    function(param) {
+      fit_mod_summary &lt;- summary(fit_mod4)$summary[param, c(&quot;mean&quot;, &quot;sd&quot;)]
+      fit_mod_summary &lt;- cbind(
+        formatC(fit_mod_summary[,1], digits = 2, format = &quot;f&quot;),
+        paste0(&quot;(&quot;, formatC(fit_mod_summary[,2], digits = 2, format = &quot;f&quot;), &quot;)&quot;)
+      )
+    } %&gt;% 
+      as_tibble()
+  ) %&gt;% 
+    bind_cols %&gt;% 
+    as.matrix()
+  ) %&gt;% 
+  rbind(
+    c(
+      &quot;ln($\\sigma_c$)&quot;, 
+      summary(fit_mod4)$summary[&quot;log_sigma_c&quot;, c(&quot;mean&quot;)] %&gt;% formatC(digits = 3, format = &quot;f&quot;),
+      paste0(&quot;(&quot;, summary(fit_mod4)$summary[&quot;log_sigma_c&quot;, c(&quot;sd&quot;)] %&gt;% formatC(digits = 3, format = &quot;f&quot;), &quot;)&quot;),
+      rep(&quot; &quot;, 6)
+      ),
+    c(
+      &quot;ln($\\sigma_t$)&quot;, 
+      summary(fit_mod4)$summary[&quot;log_sigma_t&quot;, c(&quot;mean&quot;)] %&gt;% formatC(digits = 3, format = &quot;f&quot;),
+      paste0(&quot;(&quot;, summary(fit_mod4)$summary[&quot;log_sigma_t&quot;, c(&quot;sd&quot;)] %&gt;% formatC(digits = 3, format = &quot;f&quot;), &quot;)&quot;),
+      rep(&quot; &quot;, 6)
+      )
+  ) %&gt;% 
+  set_colnames(NULL) %&gt;% 
+  kable(&quot;html&quot;, booktabs = TRUE, align = c(&quot;l&quot;, rep(&quot;c&quot;, 8))) %&gt;% 
+  add_header_above(
+    c(&quot; &quot;, rep(c(&quot;Mean&quot;, &quot;(S.D.)&quot;), 4))
+  ) %&gt;% 
+  add_header_above(
+    c(&quot;Covariate&quot;, &quot;$\\beta_c$&quot; = 2, &quot;$\\beta_t - \\beta_c$&quot; = 2, &quot;$\\gamma_0$&quot; = 2, &quot;$\\gamma_1 - \\gamma_0$&quot; = 2)
+  ) %&gt;% 
+  kable_styling(position = &quot;center&quot;)</code></pre>
+<pre><code>## New names:
+## * V1 -&gt; V1...1
+## * V2 -&gt; V2...2
+## * V1 -&gt; V1...3
+## * V2 -&gt; V2...4
+## * V1 -&gt; V1...5
+## * ...</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Covariate
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+<span class="math inline">\(\beta_c\)</span>
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+<span class="math inline">\(\beta_t - \beta_c\)</span>
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+<span class="math inline">\(\gamma_0\)</span>
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+<span class="math inline">\(\gamma_1 - \gamma_0\)</span>
+</div>
+</th>
+</tr>
+<tr>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Mean
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(S.D.)
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Mean
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(S.D.)
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Mean
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(S.D.)
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Mean
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="1">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+(S.D.)
+</div>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+intercept
+</td>
+<td style="text-align:center;">
+1.58
+</td>
+<td style="text-align:center;">
+(0.08)
+</td>
+<td style="text-align:center;">
+0.07
+</td>
+<td style="text-align:center;">
+(0.13)
+</td>
+<td style="text-align:center;">
+0.67
+</td>
+<td style="text-align:center;">
+(0.14)
+</td>
+<td style="text-align:center;">
+0.78
+</td>
+<td style="text-align:center;">
+(0.28)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+age
+</td>
+<td style="text-align:center;">
+0.02
+</td>
+<td style="text-align:center;">
+(0.01)
+</td>
+<td style="text-align:center;">
+-0.02
+</td>
+<td style="text-align:center;">
+(0.02)
+</td>
+<td style="text-align:center;">
+-0.01
+</td>
+<td style="text-align:center;">
+(0.02)
+</td>
+<td style="text-align:center;">
+0.02
+</td>
+<td style="text-align:center;">
+(0.03)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+education
+</td>
+<td style="text-align:center;">
+0.01
+</td>
+<td style="text-align:center;">
+(0.06)
+</td>
+<td style="text-align:center;">
+0.01
+</td>
+<td style="text-align:center;">
+(0.09)
+</td>
+<td style="text-align:center;">
+-0.05
+</td>
+<td style="text-align:center;">
+(0.12)
+</td>
+<td style="text-align:center;">
+0.02
+</td>
+<td style="text-align:center;">
+(0.18)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+married
+</td>
+<td style="text-align:center;">
+-0.23
+</td>
+<td style="text-align:center;">
+(0.25)
+</td>
+<td style="text-align:center;">
+0.36
+</td>
+<td style="text-align:center;">
+(0.36)
+</td>
+<td style="text-align:center;">
+-0.17
+</td>
+<td style="text-align:center;">
+(0.39)
+</td>
+<td style="text-align:center;">
+0.91
+</td>
+<td style="text-align:center;">
+(0.71)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+nodegree
+</td>
+<td style="text-align:center;">
+-0.01
+</td>
+<td style="text-align:center;">
+(0.27)
+</td>
+<td style="text-align:center;">
+-0.24
+</td>
+<td style="text-align:center;">
+(0.38)
+</td>
+<td style="text-align:center;">
+-0.28
+</td>
+<td style="text-align:center;">
+(0.48)
+</td>
+<td style="text-align:center;">
+-0.25
+</td>
+<td style="text-align:center;">
+(0.76)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+black
+</td>
+<td style="text-align:center;">
+-0.44
+</td>
+<td style="text-align:center;">
+(0.20)
+</td>
+<td style="text-align:center;">
+0.36
+</td>
+<td style="text-align:center;">
+(0.31)
+</td>
+<td style="text-align:center;">
+-1.08
+</td>
+<td style="text-align:center;">
+(0.43)
+</td>
+<td style="text-align:center;">
+-0.79
+</td>
+<td style="text-align:center;">
+(1.02)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+earn ’74
+</td>
+<td style="text-align:center;">
+-0.01
+</td>
+<td style="text-align:center;">
+(0.02)
+</td>
+<td style="text-align:center;">
+0.01
+</td>
+<td style="text-align:center;">
+(0.03)
+</td>
+<td style="text-align:center;">
+0.01
+</td>
+<td style="text-align:center;">
+(0.04)
+</td>
+<td style="text-align:center;">
+-0.02
+</td>
+<td style="text-align:center;">
+(0.08)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+earn ’74 <span class="math inline">\(&amp;gt;\)</span> 0
+</td>
+<td style="text-align:center;">
+0.18
+</td>
+<td style="text-align:center;">
+(0.32)
+</td>
+<td style="text-align:center;">
+-0.57
+</td>
+<td style="text-align:center;">
+(0.46)
+</td>
+<td style="text-align:center;">
+1.00
+</td>
+<td style="text-align:center;">
+(0.55)
+</td>
+<td style="text-align:center;">
+-3.09
+</td>
+<td style="text-align:center;">
+(1.14)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+earn ’75
+</td>
+<td style="text-align:center;">
+0.02
+</td>
+<td style="text-align:center;">
+(0.04)
+</td>
+<td style="text-align:center;">
+0.01
+</td>
+<td style="text-align:center;">
+(0.05)
+</td>
+<td style="text-align:center;">
+0.00
+</td>
+<td style="text-align:center;">
+(0.08)
+</td>
+<td style="text-align:center;">
+0.20
+</td>
+<td style="text-align:center;">
+(0.17)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+earn ’75 <span class="math inline">\(&amp;gt;\)</span> 0
+</td>
+<td style="text-align:center;">
+-0.06
+</td>
+<td style="text-align:center;">
+(0.29)
+</td>
+<td style="text-align:center;">
+0.18
+</td>
+<td style="text-align:center;">
+(0.40)
+</td>
+<td style="text-align:center;">
+-0.61
+</td>
+<td style="text-align:center;">
+(0.46)
+</td>
+<td style="text-align:center;">
+2.15
+</td>
+<td style="text-align:center;">
+(1.07)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ln(<span class="math inline">\(\sigma_c\)</span>)
+</td>
+<td style="text-align:center;">
+0.003
+</td>
+<td style="text-align:center;">
+(0.057)
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ln(<span class="math inline">\(\sigma_t\)</span>)
+</td>
+<td style="text-align:center;">
+0.052
+</td>
+<td style="text-align:center;">
+(0.063)
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
 
 
 

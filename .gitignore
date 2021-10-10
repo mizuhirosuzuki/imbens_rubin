@@ -83,6 +83,7 @@
 !/**/Output/**/*.eps
 !/**/Output/**/*.svg
 !docs/*_files/**/*.png
+!/**/stan_files/*.stan
 
 
 #######################
